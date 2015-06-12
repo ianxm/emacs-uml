@@ -1,0 +1,63 @@
+============================= center, separate timelines
+
+person1 person2 kitchen
+     |           |   |
+
+  person1     person2      kitchen
+     |           |            |
+
+============================= draw arrow
+
+    person1      person2         kitchen     
+       |            |               |
+       |-           |               |
+
+    person1      person2         kitchen     
+       |            |               |
+       |----------->|               |
+
+============================= longer arrow
+
+    person1      person2         kitchen     
+       |            |               |
+       |-           |              >|
+
+    person1      person2         kitchen     
+       |            |               |
+       |--------------------------->|
+
+============================= dashed arrow
+
+    person1      person2         kitchen     
+       |            |               |
+       |- -         |               |
+
+    person1      person2         kitchen     
+       |            |               |
+       |- - - - - - - - - - - - - ->|
+
+============================= center label
+
+    person1      person2         kitchen     
+       |            |               |
+       | doit           |               |
+       |----------->|               |
+
+    person1      person2         kitchen     
+       |            |               |
+       |    doit    |               |
+       |----------->|               |
+
+============================= center label, spread out timelines
+
+    person1      person2         kitchen     
+       |            |               |
+       | doSomethingImportant    |               |
+       |----------->|               |
+
+    person1                   person2         kitchen     
+       |                        |               |
+       |  doSomethingImportant  |               |
+       |----------------------->|               |
+
+
