@@ -1,31 +1,43 @@
-(defun write-text-centered-on (text target linestart)
+(defun write-text-centered-on (text target)
   "write given text centered on the given column"
-  (let* ((pos (- (point) linestart))
-         (halfname (floor (/ (length text) 2)))
-         (tot (- (- target halfname) pos))) ;; target-pos-len/2
-    (insert (format "%s%s" (make-string tot ? ) (cdr (assoc 'name elt))))))
+  (message "write-text-centered-on")
+  (let* ((halfname (floor (/ (length text) 2)))
+         (col (- target halfname))) ;; target-pos-len/2
+    (move-to-column col t)
+    (insert (format "%s" text))))
 
-(defun write-vertical-space (timelines linestart)
+(defun write-vertical-space (timelines)
   "write a row of only timelines"
-  (dolist (elt timelines)
-    (let* ((target (cdr (assoc 'center elt)))
-           (pos (- (point) linestart))
-           (tot (- target pos))) ;; target-pos
-      (insert (format "%s|" (make-string tot ? ))))))
+  (message "write-vertical-space")
+  (dotimes (ii (length timelines))
+    (let* ((col (plist-get (elt timelines ii) 'center)))
+      (move-to-column col t)
+      (insert (format "|")))))
 
 (defun find-nearest-timeline (timelines col)
-  (let ((ii 0)
-        ret
+  "return the index of the nearest timeline to the given col"
+  (message "find-nearest-timeline")
+  (let (ret
         delta
         olddelta)
-    (dolist (elt timelines)
-      (setq delta (abs (- col (cdr (assoc 'origcenter elt)))))
+    (dotimes (ii (length timelines))
+      (setq delta (abs (- col (plist-get (elt timelines ii) 'origcenter))))
       (when (or (not ret) (< delta olddelta))
           (setq ret ii)
-          (setq olddelta delta))
-      (setq ii (1+ ii)))
-    ret
-    ))
+          (setq olddelta delta)))
+    ret))
+
+(defun write-arrow (from to dashed)
+  (if (< from to)
+      (let ((delta (- to from)))
+        (move-to-column (1+ from))
+        (insert (format"%s>" (make-string (- delta 2) ?-)))
+        (delete-char (- delta 1)))
+    (let ((delta (- from to)))
+      (move-to-column (1+ to))
+      (insert (format "<%s" (make-string (- delta 2) ?-)))
+      (delete-char (- delta 1))))
+  )
 
 (defun sequence ()
   "formats a sequence diagram"
@@ -37,6 +49,7 @@
         messages)
     (save-excursion
       (beginning-of-line)
+
       ;; find the top of the diagram
       (setq line (buffer-substring (point) (line-end-position)))
       (while (and
@@ -58,25 +71,34 @@
       ;; (message "top: %d bottom: %d" (count-lines (point-min) top) (count-lines (point-min) bottom))
 
       ;; get timeline labels
-      ;; build list of timelines like this:
-      ;; ( ((name . "person1") (center . 6)) ((name . "person2") (origcenter . 12) (center . 18)) ... )
+      ;; build array of plists like this:
+      ;; [ (name "person1" origcenter 5 center 6) (name "person2" origcenter 12 center 18) ... ]
       (goto-char top)
       (setq line (buffer-substring (point) (line-end-position)))
 
+      ;; count timelines
+      (let ((start 0)
+            (count 0))
+        (while (string-match "\\([a-zA-Z0-9]+\\)" line start)
+          (setq count (1+ count))
+          (setq start (match-end 1)))
+        (setq timelines (make-vector count nil)))
+
+      ;; 
       (let ((start 0)
             (ii 0))
         (while (string-match "\\([a-zA-Z0-9]+\\)" line start)
-          (setq timelines (append timelines (list (list (cons 'name (match-string 1 line))
-                                                        (cons 'origcenter (floor (/ (+ (match-beginning 1) (match-end 1)) 2)))
-                                                        (cons 'center (+ 6 (* 12 ii)))))))
+          (aset timelines ii (list 'name       (match-string 1 line)
+                                   'origcenter (floor (/ (+ (match-beginning 1) (match-end 1)) 2))
+                                   'center     (+ 6 (* 12 ii))))
           (setq ii (1+ ii))
           (setq start (match-end 1))))
 
-      ;; messages is a mixed list of arrows and separators
+      ;; messages is a mixed list of plists of arrows and separators
       ;; arrows look like
-      ;;   ((from . 0) (to . 2) (text . "doIt()") (dashed . f))
+      ;;   (from 0 to 2 label "doIt()" dashed f)
       ;; separators look like
-      ;;   ((text . "title for next part"))
+      ;;   (text "title for next part")
 
       (let (label)
         (while (not (eq (point) bottom))
@@ -86,36 +108,49 @@
           
           (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9 ]*?[a-zA-Z0-9]?\\)[ |]*$" line)
             (setq label (match-string 1 line)))
-          (when (string-match "|\\-.*>|" line)
-            (message "  %s -> %s : %s"
-                     (find-nearest-timeline timelines (match-beginning 0))
-                     (find-nearest-timeline timelines (match-end 0))
-                     label)
-            (setq label nil)
-            )
-          (when (string-match "|<.*\\-|" line)
-            (message "  %s <- %s : %s"
-                     (find-nearest-timeline timelines (match-beginning 0))
-                     (find-nearest-timeline timelines (match-end 0))
-                     label)
-            (setq label nil)
-            )
+          (when (string-match "|\\-[^a-zA-Z0-9]*>|" line)
+            (setq messages (append messages (list (list 'label  label
+                                                        'from   (find-nearest-timeline timelines (match-beginning 0))
+                                                        'to     (find-nearest-timeline timelines (match-end 0))
+                                                        'dashed nil))))
+            ;; (message "  %s -> %s : %s"
+            ;;          (find-nearest-timeline timelines (match-beginning 0))
+            ;;          (find-nearest-timeline timelines (match-end 0))
+            ;;          label)
+            (setq label nil))
+          (when (string-match "|<[^a-zA-Z0-9]*\\-|" line)
+            (setq messages (append messages (list (list 'label  label
+                                                        'from   (find-nearest-timeline timelines (match-end 0))
+                                                        'to     (find-nearest-timeline timelines (match-beginning 0))
+                                                        'dashed nil))))
+            ;; (message "  %s <- %s : %s"
+            ;;          (find-nearest-timeline timelines (match-beginning 0))
+            ;;          (find-nearest-timeline timelines (match-end 0))
+            ;;          label)
+            (setq label nil))
           ))
 
       ;; space out timelines
       (forward-line 2)
-      (let ((linestart (point)))
-        (dolist (elt timelines)
-          (write-text-centered-on (cdr (assoc 'name elt))
-                                  (cdr (assoc 'center elt))
-                                  linestart)))
-      (insert "\n")
+      (dotimes (ii (length timelines))
+        (message " %d dotimes %s" ii (elt timelines ii))
+        (write-text-centered-on (plist-get (elt timelines ii) 'name)
+                                (plist-get (elt timelines ii) 'center)))
+      (newline)
 
-      (write-vertical-space timelines (point))
-      (insert "\n")
+      (message "%s" messages)
 
-      (forward-line -2)
-
+      (dolist (elt messages)
+        (write-vertical-space timelines)
+        (newline)
+        (write-vertical-space timelines)
+        (newline)
+        (forward-line -1)
+        (write-arrow (plist-get (elt timelines (plist-get elt 'from)) 'center)
+                     (plist-get (elt timelines (plist-get elt 'to)) 'center)
+                     (plist-get elt 'dashed))
+        (forward-line)
+        )
     )
   )
 )
