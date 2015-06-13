@@ -1,6 +1,6 @@
 (defun write-text-centered-on (text target)
   "write given text centered on the given column"
-  (message "write-text-centered-on")
+  (message "write-text-centered-on %s %d" text target)
   (let* ((halfname (floor (/ (length text) 2)))
          (col (- target halfname))) ;; target-pos-len/2
     (move-to-column col t)
@@ -8,7 +8,7 @@
 
 (defun write-vertical-space (timelines)
   "write a row of only timelines"
-  (message "write-vertical-space")
+  ;; (message "write-vertical-space")
   (dotimes (ii (length timelines))
     (let* ((col (plist-get (elt timelines ii) 'center)))
       (move-to-column col t)
@@ -28,14 +28,20 @@
     ret))
 
 (defun write-arrow (from to dashed)
+  "write arrow over row"
+  ;; (message "write-arrow")
   (if (< from to)
-      (let ((delta (- to from)))
-        (move-to-column (1+ from))
-        (insert (format"%s>" (make-string (- delta 2) ?-)))
-        (delete-char (- delta 1)))
-    (let ((delta (- from to)))
+    (let ((delta (- to from)))    ;; --->
+      (move-to-column (1+ from))
+      (if dashed
+          (insert (format"%s>" (eval `(concat ,@(make-list (floor (/ (- delta 2) 2)) "- ")))))
+        (insert (format"%s>" (make-string (- delta 2) ?-))))
+      (delete-char (- delta 1)))
+    (let ((delta (- from to)))      ;; <---
       (move-to-column (1+ to))
-      (insert (format "<%s" (make-string (- delta 2) ?-)))
+      (if dashed
+          (insert (format"<%s" (eval `(concat ,@(make-list (floor (/ (- delta 2) 2)) " -")))))
+        (insert (format "<%s" (make-string (- delta 2) ?-))))
       (delete-char (- delta 1))))
   )
 
@@ -100,11 +106,13 @@
       ;; separators look like
       ;;   (text "title for next part")
 
-      (let (label)
+      (let (label
+            dashed)
         (while (not (eq (point) bottom))
           (forward-line 1)
           (setq line (buffer-substring (point) (line-end-position)))
           (message "checking %s" line)
+          (setq dashed (string-match "\\- \\-" line))
           
           (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9 ]*?[a-zA-Z0-9]?\\)[ |]*$" line)
             (setq label (match-string 1 line)))
@@ -112,7 +120,7 @@
             (setq messages (append messages (list (list 'label  label
                                                         'from   (find-nearest-timeline timelines (match-beginning 0))
                                                         'to     (find-nearest-timeline timelines (match-end 0))
-                                                        'dashed nil))))
+                                                        'dashed dashed))))
             ;; (message "  %s -> %s : %s"
             ;;          (find-nearest-timeline timelines (match-beginning 0))
             ;;          (find-nearest-timeline timelines (match-end 0))
@@ -122,7 +130,7 @@
             (setq messages (append messages (list (list 'label  label
                                                         'from   (find-nearest-timeline timelines (match-end 0))
                                                         'to     (find-nearest-timeline timelines (match-beginning 0))
-                                                        'dashed nil))))
+                                                        'dashed dashed))))
             ;; (message "  %s <- %s : %s"
             ;;          (find-nearest-timeline timelines (match-beginning 0))
             ;;          (find-nearest-timeline timelines (match-end 0))
@@ -141,6 +149,7 @@
         (write-vertical-space timelines)
         (newline)
 
+        ;; write label
         (write-vertical-space timelines)
         (newline)
         (forward-line -1)
@@ -149,10 +158,15 @@
           (setq center (floor (/ (+ (plist-get (elt timelines (plist-get elt 'from)) 'center)
                                     (plist-get (elt timelines (plist-get elt 'to)) 'center))
                                  2)))
+          ;; (message "%d %d %d" (plist-get (elt timelines (plist-get elt 'from)) 'center)
+          ;;          (plist-get (elt timelines (plist-get elt 'to)) 'center)
+          ;;          center)
+          
           (write-text-centered-on text center)
           (delete-char (length text)))
         (forward-line)
 
+        ;; write arrow
         (write-vertical-space timelines)
         (newline)
         (forward-line -1)
@@ -161,7 +175,10 @@
                      (plist-get elt 'dashed))
         (forward-line)
         )
-    )
+
+      (write-vertical-space timelines)
+      (newline)
+      )
   )
 )
 (provide 'sequence)
