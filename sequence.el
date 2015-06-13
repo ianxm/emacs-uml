@@ -1,17 +1,31 @@
 (defun write-text-centered-on (text target linestart)
-  "writes given text centered on the given column"
+  "write given text centered on the given column"
   (let* ((pos (- (point) linestart))
          (halfname (floor (/ (length text) 2)))
          (tot (- (- target halfname) pos))) ;; target-pos-len/2
     (insert (format "%s%s" (make-string tot ? ) (cdr (assoc 'name elt))))))
 
 (defun write-vertical-space (timelines linestart)
-  "write a row of timelines"
+  "write a row of only timelines"
   (dolist (elt timelines)
     (let* ((target (cdr (assoc 'center elt)))
            (pos (- (point) linestart))
            (tot (- target pos))) ;; target-pos
       (insert (format "%s|" (make-string tot ? ))))))
+
+(defun find-nearest-timeline (timelines col)
+  (let ((ii 0)
+        ret
+        delta
+        olddelta)
+    (dolist (elt timelines)
+      (setq delta (abs (- col (cdr (assoc 'origcenter elt)))))
+      (when (or (not ret) (< delta olddelta))
+          (setq ret ii)
+          (setq olddelta delta))
+      (setq ii (1+ ii)))
+    ret
+    ))
 
 (defun sequence ()
   "formats a sequence diagram"
@@ -64,21 +78,29 @@
       ;; separators look like
       ;;   ((text . "title for next part"))
 
-      (while (not (eq (point) bottom))
-        (forward-line 1)
-        (setq line (buffer-substring (point) (line-end-position)))
-        (message "checking %s" line)
-        
-        (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9 ]*?[a-zA-Z0-9]?\\)[ |]*$" line)
-          (message "  found words %s" (match-string 1 line))
-          )
-        (when (string-match "|\\-.*>|" line)
-          (message "  found right arrow")
-          )
-        (when (string-match "|<.*\\-|" line)
-          (message "  found left arrow")
-          )
-        )
+      (let (label)
+        (while (not (eq (point) bottom))
+          (forward-line 1)
+          (setq line (buffer-substring (point) (line-end-position)))
+          (message "checking %s" line)
+          
+          (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9 ]*?[a-zA-Z0-9]?\\)[ |]*$" line)
+            (setq label (match-string 1 line)))
+          (when (string-match "|\\-.*>|" line)
+            (message "  %s -> %s : %s"
+                     (find-nearest-timeline timelines (match-beginning 0))
+                     (find-nearest-timeline timelines (match-end 0))
+                     label)
+            (setq label nil)
+            )
+          (when (string-match "|<.*\\-|" line)
+            (message "  %s <- %s : %s"
+                     (find-nearest-timeline timelines (match-beginning 0))
+                     (find-nearest-timeline timelines (match-end 0))
+                     label)
+            (setq label nil)
+            )
+          ))
 
       ;; space out timelines
       (forward-line 2)
@@ -89,7 +111,6 @@
                                   linestart)))
       (insert "\n")
 
-      ;; write vertical space
       (write-vertical-space timelines (point))
       (insert "\n")
 
