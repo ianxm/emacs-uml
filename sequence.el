@@ -1,12 +1,26 @@
+(defun write-text-centered-on (text target linestart)
+  "writes given text centered on the given column"
+  (let* ((pos (- (point) linestart))
+         (halfname (floor (/ (length text) 2)))
+         (tot (- (- target halfname) pos))) ;; target-pos-len/2
+    (insert (format "%s%s" (make-string tot ? ) (cdr (assoc 'name elt))))))
+
+(defun write-vertical-space (timelines linestart)
+  "write a row of timelines"
+  (dolist (elt timelines)
+    (let* ((target (cdr (assoc 'center elt)))
+           (pos (- (point) linestart))
+           (tot (- target pos))) ;; target-pos
+      (insert (format "%s|" (make-string tot ? ))))))
+
 (defun sequence ()
   "formats a sequence diagram"
   (interactive)
-  (let ((startpos (point))
-        top
+  (let (top
         bottom
         line
-        linestart
-        timelines)
+        timelines
+        messages)
     (save-excursion
       (beginning-of-line)
       ;; find the top of the diagram
@@ -31,57 +45,56 @@
 
       ;; get timeline labels
       ;; build list of timelines like this:
-      ;; ( ((name . "person1") (center . 6)) ((name . "person2") (center . 18)) ... )
+      ;; ( ((name . "person1") (center . 6)) ((name . "person2") (origcenter . 12) (center . 18)) ... )
       (goto-char top)
       (setq line (buffer-substring (point) (line-end-position)))
-      (setq names (split-string line))
-      (dolist (ii (number-sequence 0 (- (length names) 1)) timelines)
-              (setq timelines (append timelines (list (list (cons 'name (nth ii names))
-                                                            (cons 'center (+ 6 (* 12 ii))))))))
+
+      (let ((start 0)
+            (ii 0))
+        (while (string-match "\\([a-zA-Z0-9]+\\)" line start)
+          (setq timelines (append timelines (list (list (cons 'name (match-string 1 line))
+                                                        (cons 'origcenter (floor (/ (+ (match-beginning 1) (match-end 1)) 2)))
+                                                        (cons 'center (+ 6 (* 12 ii)))))))
+          (setq ii (1+ ii))
+          (setq start (match-end 1))))
+
+      ;; messages is a mixed list of arrows and separators
+      ;; arrows look like
+      ;;   ((from . 0) (to . 2) (text . "doIt()") (dashed . f))
+      ;; separators look like
+      ;;   ((text . "title for next part"))
+
+      (while (not (eq (point) bottom))
+        (forward-line 1)
+        (setq line (buffer-substring (point) (line-end-position)))
+        (message "checking %s" line)
+        
+        (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9 ]*?[a-zA-Z0-9]?\\)[ |]*$" line)
+          (message "  found words %s" (match-string 1 line))
+          )
+        (when (string-match "|\\-.*>|" line)
+          (message "  found right arrow")
+          )
+        (when (string-match "|<.*\\-|" line)
+          (message "  found left arrow")
+          )
+        )
+
       ;; space out timelines
       (forward-line 2)
-      (setq linestart (point))
-      (dolist (elt timelines)
-        (let* ((target (cdr (assoc 'center elt)))
-              (pos (- (point) linestart))
-              (halfname (floor (/ (length (cdr (assoc 'name elt))) 2)))
-              (tot (- (- target halfname) pos))) ;; target-pos-len/2
-          (insert (format "%s%s" (make-string tot ? ) (cdr (assoc 'name elt))))
-          ))
+      (let ((linestart (point)))
+        (dolist (elt timelines)
+          (write-text-centered-on (cdr (assoc 'name elt))
+                                  (cdr (assoc 'center elt))
+                                  linestart)))
       (insert "\n")
 
       ;; write vertical space
-      (setq linestart (point))
-      (dolist (elt timelines)
-        (let* ((target (cdr (assoc 'center elt)))
-              (pos (- (point) linestart))
-              (tot (- target pos))) ;; target-pos
-          (insert (format "%s|" (make-string tot ? )))
-          ))
+      (write-vertical-space timelines (point))
       (insert "\n")
 
       (forward-line -2)
 
-      ;; get timeline centers
-      
-
-      ;; (goto-char top)
-      ;; (search-forward "@startuml")
-      ;; (while (< (point) bottom)
-      ;;   (forward-line)
-      ;;   (setq line (buffer-substring (point) (line-end-position)))
-      ;;   (message (format "read: %s" line))
-      ;;   (if (string-match "participant\s+\\(\w+\\)\s+as\s+\\(\w+\\)" line)
-      ;;       (message (format "found: %s as %s" (match-string 1) (match-string 2))
-      ;;       )
-      ;;   )
-      ;;   (message (format " match %s" (string-match "participant \\(.*\\)" line)))
-      ;;   (if (string-match "participant +\\([0-9a-zA-Z]+\\)" line)
-      ;;       (message (format "  found: %s" (match-string 1))))
-      ;;   (if (string-match "(.*)" line)
-      ;;       (message (format "  stuf: %s" (match-string 1)))
-      ;;   )
-      ;; )
     )
   )
 )

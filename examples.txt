@@ -60,4 +60,17 @@ person1 person2 kitchen
        |  doSomethingImportant  |               |
        |----------------------->|               |
 
+============================= test
+
+    person1                   person2         kitchen     
+       |                        |               |
+       |  doSomethingImportant  |               |
+       |----------------------->|               |
+       |                        |               |
+       |  another               |               |
+       |----------------------->|               |
+       |                        |               |
+       |  another2              |               |
+       |<                      -|               |
+
 
