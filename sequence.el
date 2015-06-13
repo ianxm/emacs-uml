@@ -70,7 +70,7 @@
       ;; (message "top: %d bottom: %d" top bottom)
       ;; (message "top: %d bottom: %d" (count-lines (point-min) top) (count-lines (point-min) bottom))
 
-      ;; get timeline labels
+      ;; get timeline data
       ;; build array of plists like this:
       ;; [ (name "person1" origcenter 5 center 6) (name "person2" origcenter 12 center 18) ... ]
       (goto-char top)
@@ -84,7 +84,7 @@
           (setq start (match-end 1)))
         (setq timelines (make-vector count nil)))
 
-      ;; 
+      ;; save timeline data
       (let ((start 0)
             (ii 0))
         (while (string-match "\\([a-zA-Z0-9]+\\)" line start)
@@ -108,7 +108,7 @@
           
           (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9 ]*?[a-zA-Z0-9]?\\)[ |]*$" line)
             (setq label (match-string 1 line)))
-          (when (string-match "|\\-[^a-zA-Z0-9]*>|" line)
+          (when (string-match "\\-[^a-zA-Z0-9]*>" line)
             (setq messages (append messages (list (list 'label  label
                                                         'from   (find-nearest-timeline timelines (match-beginning 0))
                                                         'to     (find-nearest-timeline timelines (match-end 0))
@@ -118,7 +118,7 @@
             ;;          (find-nearest-timeline timelines (match-end 0))
             ;;          label)
             (setq label nil))
-          (when (string-match "|<[^a-zA-Z0-9]*\\-|" line)
+          (when (string-match "<[^a-zA-Z0-9]*\\-" line)
             (setq messages (append messages (list (list 'label  label
                                                         'from   (find-nearest-timeline timelines (match-end 0))
                                                         'to     (find-nearest-timeline timelines (match-beginning 0))
@@ -133,16 +133,26 @@
       ;; space out timelines
       (forward-line 2)
       (dotimes (ii (length timelines))
-        (message " %d dotimes %s" ii (elt timelines ii))
         (write-text-centered-on (plist-get (elt timelines ii) 'name)
                                 (plist-get (elt timelines ii) 'center)))
       (newline)
 
-      (message "%s" messages)
-
       (dolist (elt messages)
         (write-vertical-space timelines)
         (newline)
+
+        (write-vertical-space timelines)
+        (newline)
+        (forward-line -1)
+        (let ((text (plist-get elt 'label))
+              center)
+          (setq center (floor (/ (+ (plist-get (elt timelines (plist-get elt 'from)) 'center)
+                                    (plist-get (elt timelines (plist-get elt 'to)) 'center))
+                                 2)))
+          (write-text-centered-on text center)
+          (delete-char (length text)))
+        (forward-line)
+
         (write-vertical-space timelines)
         (newline)
         (forward-line -1)
