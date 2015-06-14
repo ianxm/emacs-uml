@@ -70,139 +70,140 @@
         line
         timelines
         messages)
-    (save-excursion
-      (beginning-of-line)
+    (beginning-of-line)
 
-      ;; find the top of the diagram
-      (setq line (buffer-substring (point) (line-end-position)))
-      (while (and
-              (not (string-match "^[\s+]*$" line))
-              (eq 0 (forward-line -1)))
-        (setq line (buffer-substring (point) (line-end-position))))
-      (forward-line)
-      (setq top (point))
+    ;; find the top of the diagram
+    (setq line (buffer-substring (point) (line-end-position)))
+    (while (and
+            (not (string-match "^[\s+]*$" line))
+            (eq 0 (forward-line -1)))
+      (setq line (buffer-substring (point) (line-end-position))))
+    (forward-line)
+    (setq top (point))
 
-      ;; find the bottom of the diagram
-      (setq line (buffer-substring (point) (line-end-position)))
-      (while (and
-              (not (string-match "^[\s+]*$" line))
-              (eq 0 (forward-line)))
-        (setq line (buffer-substring (point) (line-end-position))))
-      (forward-line -1)
-      (setq bottom (point))
-      ;; (message "top: %d bottom: %d" top bottom)
-      ;; (message "top: %d bottom: %d" (count-lines (point-min) top) (count-lines (point-min) bottom))
+    ;; find the bottom of the diagram
+    (setq line (buffer-substring (point) (line-end-position)))
+    (while (and
+            (not (string-match "^[\s+]*$" line))
+            (eq 0 (forward-line)))
+      (setq line (buffer-substring (point) (line-end-position))))
+    (forward-line -1)
+    (end-of-line)
+    (setq bottom (point))
+    ;; (message "top: %d bottom: %d" top bottom)
+    ;; (message "top: %d bottom: %d" (count-lines (point-min) top) (count-lines (point-min) bottom))
 
-      ;; get timeline data
-      ;; build array of plists like this:
-      ;; [ (name "person1" origcenter 5 center 6) (name "person2" origcenter 12 center 18) ... ]
-      (goto-char top)
-      (setq line (buffer-substring (point) (line-end-position)))
+    ;; get timeline data
+    ;; build array of plists like this:
+    ;; [ (name "person1" origcenter 5 center 6) (name "person2" origcenter 12 center 18) ... ]
+    (goto-char top)
+    (setq line (buffer-substring (point) (line-end-position)))
 
-      ;; count timelines
-      (let ((start 0)
-            (count 0))
-        (while (string-match "\\([a-zA-Z0-9]+\\)" line start)
-          (setq count (1+ count))
-          (setq start (match-end 1)))
-        (setq timelines (make-vector count nil)))
+    ;; count timelines
+    (let ((start 0)
+          (count 0))
+      (while (string-match "\\([a-zA-Z0-9]+\\)" line start)
+        (setq count (1+ count))
+        (setq start (match-end 1)))
+      (setq timelines (make-vector count nil)))
 
-      ;; save timeline data
-      (let ((start 0)
-            (ii 0))
-        (while (string-match "\\([a-zA-Z0-9]+\\)" line start)
-          (aset timelines ii (list 'name       (match-string 1 line)
-                                   'origcenter (floor (/ (+ (match-beginning 1) (match-end 1)) 2))
-                                   'center     (+ 6 (* 12 ii))))
-          (setq ii (1+ ii))
-          (setq start (match-end 1))))
+    ;; save timeline data
+    (let ((start 0)
+          (ii 0))
+      (while (string-match "\\([a-zA-Z0-9]+\\)" line start)
+        (aset timelines ii (list 'name       (match-string 1 line)
+                                 'origcenter (floor (/ (+ (match-beginning 1) (match-end 1)) 2))
+                                 'center     (+ 6 (* 12 ii))))
+        (setq ii (1+ ii))
+        (setq start (match-end 1))))
 
-      ;; messages is a mixed list of plists of arrows and separators
-      ;; arrows look like
-      ;;   (from 0 to 2 label "doIt()" dashed f)
-      ;; separators look like
-      ;;   (text "title for next part")
+    ;; messages is a mixed list of plists of arrows and separators
+    ;; arrows look like
+    ;;   (from 0 to 2 label "doIt()" dashed f)
+    ;; separators look like
+    ;;   (text "title for next part")
 
-      (let (label
-            dashed
-            from
-            to)
-        (while (not (eq (point) bottom))
-          (forward-line 1)
-          (setq line (buffer-substring (point) (line-end-position)))
-          (message "checking %s" line)
-          (setq dashed (string-match "\\- \\-" line))
-          
-          (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9 ]*?[a-zA-Z0-9]?\\)[ |]*$" line)
-            (setq label (match-string 1 line)))
-          (when (string-match "\\-[^a-zA-Z0-9]*>" line)
-            (setq from (find-nearest-timeline timelines (match-beginning 0)))
-            (setq to (find-nearest-timeline timelines (match-end 0)))
-            (fit-label-between timelines from to (+ (length label) 5))
-            (setq messages (append messages (list (list 'label  label
-                                                        'from   from
-                                                        'to     to
-                                                        'dashed dashed))))
-            ;; (message "  %s -> %s : %s"
-            ;;          (find-nearest-timeline timelines (match-beginning 0))
-            ;;          (find-nearest-timeline timelines (match-end 0))
-            ;;          label)
-            (setq label nil))
-          (when (string-match "<[^a-zA-Z0-9]*\\-" line)
-            (setq from (find-nearest-timeline timelines (match-end 0)))
-            (setq to (find-nearest-timeline timelines (match-beginning 0)))
-            (fit-label-between timelines to from (+ (length label) 5))
-            (setq messages (append messages (list (list 'label  label
-                                                        'from   from
-                                                        'to     to
-                                                        'dashed dashed))))
-            ;; (message "  %s <- %s : %s"
-            ;;          (find-nearest-timeline timelines (match-beginning 0))
-            ;;          (find-nearest-timeline timelines (match-end 0))
-            ;;          label)
-            (setq label nil))
-          ))
+    (let (label
+          dashed
+          from
+          to)
+      (while (<= (point) bottom)
+        (forward-line 1)
+        (setq line (buffer-substring (point) (line-end-position)))
+        (message "checking %s" line)
+        (setq dashed (string-match "\\- \\-" line))
+        
+        (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9\-\(\) ]*?[a-zA-Z0-9\-\(\)]?\\)[ |]*$" line)
+          (setq label (match-string 1 line)))
+        (when (string-match "\\-[^a-zA-Z0-9]*>" line)
+          (setq from (find-nearest-timeline timelines (match-beginning 0)))
+          (setq to (find-nearest-timeline timelines (match-end 0)))
+          (fit-label-between timelines from to (+ (length label) 5))
+          (setq messages (append messages (list (list 'label  label
+                                                      'from   from
+                                                      'to     to
+                                                      'dashed dashed))))
+          ;; (message "  %s -> %s : %s"
+          ;;          (find-nearest-timeline timelines (match-beginning 0))
+          ;;          (find-nearest-timeline timelines (match-end 0))
+          ;;          label)
+          (setq label nil))
+        (when (string-match "<[^a-zA-Z0-9]*\\-" line)
+          (setq from (find-nearest-timeline timelines (match-end 0)))
+          (setq to (find-nearest-timeline timelines (match-beginning 0)))
+          (fit-label-between timelines to from (+ (length label) 5))
+          (setq messages (append messages (list (list 'label  label
+                                                      'from   from
+                                                      'to     to
+                                                      'dashed dashed))))
+          ;; (message "  %s <- %s : %s"
+          ;;          (find-nearest-timeline timelines (match-beginning 0))
+          ;;          (find-nearest-timeline timelines (match-end 0))
+          ;;          label)
+          (setq label nil))
+        ))
+    (goto-char top)
+    (delete-char (- bottom top))
 
-      ;; space out timelines
-      (forward-line 2)
-      (dotimes (ii (length timelines))
-        (write-text-centered-on (plist-get (elt timelines ii) 'name)
-                                (plist-get (elt timelines ii) 'center)))
+
+    ;; space out timelines
+    (dotimes (ii (length timelines))
+      (write-text-centered-on (plist-get (elt timelines ii) 'name)
+                              (plist-get (elt timelines ii) 'center)))
+    (newline)
+
+    (dolist (elt messages)
+      (write-vertical-space timelines)
       (newline)
 
-      (dolist (elt messages)
-        (write-vertical-space timelines)
-        (newline)
+      ;; write label
+      (let ((text (plist-get elt 'label))
+            center)
+        (when text
+          (write-vertical-space timelines)
+          (newline)
+          (forward-line -1)
+          (setq center (1+ (floor (/ (+ (plist-get (elt timelines (plist-get elt 'from)) 'center)
+                                        (plist-get (elt timelines (plist-get elt 'to)) 'center))
+                                     2))))
+          ;; (message "%d %d %d" (plist-get (elt timelines (plist-get elt 'from)) 'center)
+          ;;          (plist-get (elt timelines (plist-get elt 'to)) 'center)
+          ;;          center)
+          
+          (write-text-centered-on text center)
+          (delete-char (length text))
+          (forward-line)))
 
-        ;; write label
-        (let ((text (plist-get elt 'label))
-              center)
-          (when text
-            (write-vertical-space timelines)
-            (newline)
-            (forward-line -1)
-            (setq center (1+ (floor (/ (+ (plist-get (elt timelines (plist-get elt 'from)) 'center)
-                                          (plist-get (elt timelines (plist-get elt 'to)) 'center))
-                                       2))))
-            ;; (message "%d %d %d" (plist-get (elt timelines (plist-get elt 'from)) 'center)
-            ;;          (plist-get (elt timelines (plist-get elt 'to)) 'center)
-            ;;          center)
-            
-            (write-text-centered-on text center)
-            (delete-char (length text))
-            (forward-line)))
-
-        ;; write arrow
-        (write-vertical-space timelines)
-        (newline)
-        (forward-line -1)
-        (write-arrow (plist-get (elt timelines (plist-get elt 'from)) 'center)
-                     (plist-get (elt timelines (plist-get elt 'to)) 'center)
-                     (plist-get elt 'dashed))
-        (forward-line))
-
+      ;; write arrow
       (write-vertical-space timelines)
-      (newline))
-  )
-)
+      (newline)
+      (forward-line -1)
+      (write-arrow (plist-get (elt timelines (plist-get elt 'from)) 'center)
+                   (plist-get (elt timelines (plist-get elt 'to)) 'center)
+                   (plist-get elt 'dashed))
+      (forward-line))
+
+    (write-vertical-space timelines)
+    (newline)
+    (goto-char top)))
 (provide 'sequence)

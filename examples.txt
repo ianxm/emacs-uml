@@ -62,16 +62,18 @@ person1 person2 kitchen
 
 ============================= test
 
-    person1                   person2         kitchen     
-       |                        |               |
-       |  doSomethingImportant  |               |
-       |----------------------->|               |
-       |                        |               |
-       |                       |-              > |
-       |                        |              |
-       |  return               |<            - - |
-       |<------ ----------------|               |
-       | some thing else                       |               |
-       |  ----------------------------------->                      |               |
-       |  returned again 2              |               |
-       |<  - - - - -                 -              -|
+    person1            person2         kitchen     
+       |                 |               |
+       |  doSomethingImportant()               |
+       |---------------->|               |
+       |                 |               |
+       |                |-              > |
+       |                 |              |
+       |  return        |<            - - |
+       |<------ ---------|               |
+       | message 1232                    |               |
+       | ------------------------------->                      |               |
+       |  returned again            |               |
+       |<  - - - - -              -              -|
+
+
