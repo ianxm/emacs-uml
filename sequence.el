@@ -132,30 +132,29 @@
         (forward-line 1)
         (setq line (buffer-substring (point) (line-end-position)))
         (message "checking %s" line)
-        (setq dashed (string-match "\\- \\-" line))
+        (setq dashed (string-match "\- \-" line))
 
         (setq found nil)
-        (if (string-match "\\([a-zA-Z0-9][a-zA-Z0-9\-\(\) ]*?[a-zA-Z0-9\-\(\)]?\\)[ |]*$" line)
+        (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9\(\) ]*?[a-zA-Z0-9\(\)]?\\)[ |\-]*$" line)
           (setq label (match-string 1 line)))
 
-        (when (and (not found) (string-match "\\-[^a-zA-Z0-9]*>" line)) ;; - >
+        (when (and (not found) (string-match "\-.*>" line)) ;; ->
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
           (setq to (find-nearest-timeline timelines (match-end 0)))
           (setq found t))
 
-        (when (and (not found) (string-match "<[^a-zA-Z0-9]*\\-" line)) ;; < -
+        (when (and (not found) (string-match "<.*\-" line)) ;; <-
           (setq from (find-nearest-timeline timelines (match-end 0)))
           (setq to (find-nearest-timeline timelines (match-beginning 0)))
           (setq found t))
 
-        (when (and (not found) (string-match "|\\-" line)) ;; |-
+        (when (and (not found) (string-match "|\-" line)) ;; |-
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
           (setq to (1+ from))
-          (if (<= to (length timelines))
+          (if (< to (length timelines))
             (setq found t)))
-            
 
-        (when (and (not found) (string-match "\\-|" line)) ;; -|
+        (when (and (not found) (string-match "\-|" line)) ;; -|
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
           (setq to (- from 1))
           (if (>= to 0)
@@ -190,9 +189,9 @@
           (write-vertical-space timelines)
           (newline)
           (forward-line -1)
-          (setq center (1+ (floor (/ (+ (plist-get (elt timelines (plist-get elt 'from)) 'center)
+          (setq center (floor (/ (+ (plist-get (elt timelines (plist-get elt 'from)) 'center)
                                         (plist-get (elt timelines (plist-get elt 'to)) 'center))
-                                     2))))
+                                     2)))
           ;; (message "%d %d %d" (plist-get (elt timelines (plist-get elt 'from)) 'center)
           ;;          (plist-get (elt timelines (plist-get elt 'to)) 'center)
           ;;          center)
