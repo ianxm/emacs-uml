@@ -126,40 +126,47 @@
     (let (label
           dashed
           from
-          to)
+          to
+          found)
       (while (<= (point) bottom)
         (forward-line 1)
         (setq line (buffer-substring (point) (line-end-position)))
         (message "checking %s" line)
         (setq dashed (string-match "\\- \\-" line))
-        
-        (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9\-\(\) ]*?[a-zA-Z0-9\-\(\)]?\\)[ |]*$" line)
+
+        (setq found nil)
+        (if (string-match "\\([a-zA-Z0-9][a-zA-Z0-9\-\(\) ]*?[a-zA-Z0-9\-\(\)]?\\)[ |]*$" line)
           (setq label (match-string 1 line)))
-        (when (string-match "\\-[^a-zA-Z0-9]*>" line)
+
+        (when (and (not found) (string-match "\\-[^a-zA-Z0-9]*>" line)) ;; - >
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
           (setq to (find-nearest-timeline timelines (match-end 0)))
-          (fit-label-between timelines from to (+ (length label) 5))
-          (setq messages (append messages (list (list 'label  label
-                                                      'from   from
-                                                      'to     to
-                                                      'dashed dashed))))
-          ;; (message "  %s -> %s : %s"
-          ;;          (find-nearest-timeline timelines (match-beginning 0))
-          ;;          (find-nearest-timeline timelines (match-end 0))
-          ;;          label)
-          (setq label nil))
-        (when (string-match "<[^a-zA-Z0-9]*\\-" line)
+          (setq found t))
+
+        (when (and (not found) (string-match "<[^a-zA-Z0-9]*\\-" line)) ;; < -
           (setq from (find-nearest-timeline timelines (match-end 0)))
           (setq to (find-nearest-timeline timelines (match-beginning 0)))
-          (fit-label-between timelines to from (+ (length label) 5))
+          (setq found t))
+
+        (when (and (not found) (string-match "|\\-" line)) ;; |-
+          (setq from (find-nearest-timeline timelines (match-beginning 0)))
+          (setq to (1+ from))
+          (if (<= to (length timelines))
+            (setq found t)))
+            
+
+        (when (and (not found) (string-match "\\-|" line)) ;; -|
+          (setq from (find-nearest-timeline timelines (match-beginning 0)))
+          (setq to (- from 1))
+          (if (>= to 0)
+            (setq found t)))
+
+        (when found
+          (fit-label-between timelines (min to from) (max to from) (+ (length label) 5))
           (setq messages (append messages (list (list 'label  label
                                                       'from   from
                                                       'to     to
                                                       'dashed dashed))))
-          ;; (message "  %s <- %s : %s"
-          ;;          (find-nearest-timeline timelines (match-beginning 0))
-          ;;          (find-nearest-timeline timelines (match-end 0))
-          ;;          label)
           (setq label nil))
         ))
     (goto-char top)
