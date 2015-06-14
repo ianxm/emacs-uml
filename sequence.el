@@ -161,7 +161,7 @@
             (setq found t)))
 
         (when found
-          (fit-label-between timelines (min to from) (max to from) (+ (length label) 5))
+          (fit-label-between timelines (min to from) (max to from) (+ (length label) 4))
           (setq messages (append messages (list (list 'label  label
                                                       'from   from
                                                       'to     to
@@ -190,12 +190,8 @@
           (newline)
           (forward-line -1)
           (setq center (floor (/ (+ (plist-get (elt timelines (plist-get elt 'from)) 'center)
-                                        (plist-get (elt timelines (plist-get elt 'to)) 'center))
-                                     2)))
-          ;; (message "%d %d %d" (plist-get (elt timelines (plist-get elt 'from)) 'center)
-          ;;          (plist-get (elt timelines (plist-get elt 'to)) 'center)
-          ;;          center)
-          
+                                    (plist-get (elt timelines (plist-get elt 'to)) 'center))
+                                 2)))
           (write-text-centered-on text center)
           (delete-char (length text))
           (forward-line)))
