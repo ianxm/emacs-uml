@@ -206,4 +206,24 @@
     (write-vertical-space timelines)
     (newline)
     (goto-char top)))
+
 (provide 'sequence)
+
+(define-minor-mode uml-mode
+  "Toggle UML mode.
+Interactively with no argument, this command toggles the mode.
+A positive prefix argument enables the mode, any other prefix
+argument disables it.  From Lisp, argument omitted or nil enables
+the mode, `toggle' toggles the state.
+
+When UML mode is enabled, C-c while the point is in a
+sequence diagram cleans up the formatting of the diagram.
+See the command \\[seqence]."
+ ;; The initial value.
+ :init-value nil
+ ;; The indicator for the mode line.
+ :lighter " uml"
+ ;; The minor mode bindings.
+ :keymap
+ `((,(kbd "C-c C-c") . sequence))
+ :group 'uml)
