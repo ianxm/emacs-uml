@@ -64,31 +64,31 @@ into this:
 *** a list of names will be spread out and centered over timelines
 
 **** before
-#+BEGIN
+#+BEGIN_SRC txt
 person1 person2 kitchen
-#+END
+#+END_SRC
 
 **** after
-#+BEGIN
+#+BEGIN_SRC txt
    person1     person2     kitchen
       |           |           |
-#+END
+#+END_SRC
 
 *** a dash next to a timeline will create an arrow to its neighbor
 
 **** before
-#+BEGIN
+#+BEGIN_SRC
    person1     person2     kitchen
       |-           |           |
-#+END
+#+END_SRC
 
 **** after
-#+BEGIN
+#+BEGIN_SRC
    person1     person2     kitchen
       |           |           |
       |---------->|           |
       |           |           |
-#+END
+#+END_SRC
 
 
 * todo
