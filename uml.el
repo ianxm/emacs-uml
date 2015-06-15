@@ -93,13 +93,13 @@
         on) ;; bool to toggle between dash or space
     (move-to-column (1+ (min to from)))
     (if (> from to) ;; <---
-        (insert-char ?<))
+        (insert ?<))
     (while (< ii (- delta 2))
-      (insert-char (if (or (not dashed) on) ?- ? ))
+      (insert (if (or (not dashed) on) ?- ? ))
       (if on (setq on nil) (setq on t)) ;; toggle dash
       (setq ii (1+ ii)))
     (if (< from to) ;; --->
-        (insert-char ?>))
+        (insert ?>))
     (delete-char (- delta 1)))
   )
 
@@ -197,7 +197,7 @@
         (setq dashed (string-match "\- \-" line))
 
         (setq found nil)
-        (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9\(\) ]*?[a-zA-Z0-9\(\)]?\\)[ |\-]*$" line)
+        (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9\(\) ]*?[a-zA-Z0-9\(\)]?\\)[ |>\-]*$" line)
           (setq label (match-string 1 line)))
 
         (when (and (not found) (string-match "\-.*>" line)) ;; ->
@@ -272,10 +272,6 @@
     (write-vertical-space timelines prefix)
     (goto-char top)))
 
-(provide 'sequence-diagram)
-(provide 'uml-next-timeline)
-(provide 'uml-prev-timeline)
-
 (define-minor-mode uml-mode
   "Toggle uml mode.
 Interactively with no argument, this command toggles the mode.
@@ -296,3 +292,7 @@ See the command \\[uml-seqence-diagram]."
    (,(kbd "M-f") . uml-forward-timeline)
    (,(kbd "M-b") . uml-back-timeline))
  :group 'uml)
+
+(provide 'uml)
+
+
