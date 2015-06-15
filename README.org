@@ -61,30 +61,34 @@ into this:
 
 * usage
 
-** a list of names will be spread out and centered over timelines
+*** a list of names will be spread out and centered over timelines
 
-*** before
-
+**** before
+#+BEGIN
 person1 person2 kitchen
+#+END
 
-*** after
-
+**** after
+#+BEGIN
    person1     person2     kitchen
       |           |           |
+#+END
 
-** a dash next to a timeline will create an arrow to its neighbor
+*** a dash next to a timeline will create an arrow to its neighbor
 
-*** before
-
+**** before
+#+BEGIN
    person1     person2     kitchen
       |-           |           |
+#+END
 
-*** after
-
+**** after
+#+BEGIN
    person1     person2     kitchen
       |           |           |
       |---------->|           |
       |           |           |
+#+END
 
 
 * todo
