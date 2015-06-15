@@ -10,7 +10,7 @@
 
 * example
   
-uml.el will convert this content:
+uml.el will convert this:
 
 #+BEGIN_SRC
    person1     person2     kitchen
@@ -48,8 +48,7 @@ into this:
 
 * features
 
-  right now uml.el only supports sequence diagrams.  it may be
-  extended for class diagrams one day.
+  uml.el only supports sequence diagrams.
 
   uml.el provides key bindings for more easily moving around sequence
   diagrams, and aligning and redrawing them.
@@ -65,13 +64,20 @@ into this:
 
 * usage
 
+**** uml-mode provides three key bindings.
+     - C-c C-c :: redraw the diagram at the point
+     - M-f :: move forward to the next word or timeline
+     - M-b :: move backward to the previous word or timeline
+
 **** a list of names will be spread out and centered over timelines
+
+  if you move the point over a line with the following content:
 
 #+BEGIN_SRC
 person1 person2 person3
 #+END_SRC
 
-  becomes
+  and hit C-c C-c, the line is replaced with:
 
 #+BEGIN_SRC
    person1     person2     person3
