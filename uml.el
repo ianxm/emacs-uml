@@ -36,9 +36,10 @@
     (setq word (point))
     (goto-char start)
     (forward-char)
-    (while (not (eq ?| (char-after)))
-      (forward-char))
-    (goto-char (min (point) word))))
+    (while (and
+            (not (eq ?| (char-after)))
+            (< (point) word))
+      (forward-char))))
 
 (defun uml-back-timeline ()
   "move point to the previous timeline bar"
@@ -49,9 +50,10 @@
     (setq word (point))
     (goto-char start)
     (forward-char -1)
-    (while (not (eq ?| (char-after)))
-      (forward-char -1))
-    (goto-char (max (point) word))))
+    (while (and
+            (not (eq ?| (char-after)))
+            (> (point) word))
+      (forward-char -1))))
 
 (defun write-text-centered-on (text target)
   "write given text centered on the given column"
