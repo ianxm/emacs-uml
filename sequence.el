@@ -32,9 +32,11 @@
     (move-to-column col t)
     (insert (format "%s" text))))
 
-(defun write-vertical-space (timelines)
+(defun write-vertical-space (timelines prefix)
   "write a row of only timelines"
   ;; (message "write-vertical-space")
+  (if prefix
+      (insert prefix))
   (dotimes (ii (length timelines))
     (let* ((col (plist-get (elt timelines ii) 'center)))
       (move-to-column col t)
@@ -91,17 +93,18 @@
 (defun sequence ()
   "formats a sequence diagram"
   (interactive)
-  (let (top
-        bottom
-        line
-        timelines
-        messages)
+  (let (top         ;; first line in buffer of diagram
+        bottom      ;; last line in buffer of diagram
+        line        ;; current line content
+        prefix      ;; comment character or nil
+        timelines   ;; list of timeline data
+        messages)   ;; list of arrow data
     (beginning-of-line)
 
     ;; find the top of the diagram
     (setq line (buffer-substring (point) (line-end-position)))
     (while (and
-            (not (string-match "^[\s+]*$" line))
+            (not (string-match "^[\s+/;#\*]*$" line))
             (eq 0 (forward-line -1)))
       (setq line (buffer-substring (point) (line-end-position))))
     (forward-line)
@@ -110,12 +113,11 @@
     ;; find the bottom of the diagram
     (setq line (buffer-substring (point) (line-end-position)))
     (while (and
-            (not (string-match "^[\s+]*$" line))
+            (not (string-match "^[\s+/;#\*]*$" line))
             (eq 0 (forward-line)))
       (setq line (buffer-substring (point) (line-end-position))))
     (forward-line -1)
-    (end-of-line)
-    (setq bottom (point))
+    (setq bottom (line-end-position))
     ;; (message "top: %d bottom: %d" top bottom)
     ;; (message "top: %d bottom: %d" (count-lines (point-min) top) (count-lines (point-min) bottom))
 
@@ -125,6 +127,9 @@
     (goto-char top)
     (setq line (buffer-substring (point) (line-end-position)))
 
+    (if (string-match "^\\(.*?\\)\s*[a-zA-Z0-9]" line)
+        (setq prefix (match-string 1 line)))
+
     ;; count timelines
     (let ((start 0)
           (count 0))
@@ -133,13 +138,13 @@
         (setq start (match-end 1)))
       (setq timelines (make-vector count nil)))
 
-    ;; save timeline data
+    ;; create list of timelines
     (let ((start 0)
           (ii 0))
       (while (string-match "\\([a-zA-Z0-9]+\\)" line start)
         (aset timelines ii (list 'name       (match-string 1 line)
                                  'origcenter (floor (/ (+ (match-beginning 1) (match-end 1)) 2))
-                                 'center     (+ 6 (* 12 ii))))
+                                 'center     (+ (* 12 ii) 6 (length prefix))))
         (setq ii (1+ ii))
         (setq start (match-end 1))))
 
@@ -157,7 +162,7 @@
       (while (<= (point) bottom)
         (forward-line 1)
         (setq line (buffer-substring (point) (line-end-position)))
-        (message "checking %s" line)
+        ;; (message "checking %s" line)
         (setq dashed (string-match "\- \-" line))
 
         (setq found nil)
@@ -199,20 +204,22 @@
 
 
     ;; space out timelines
+    (if prefix
+        (insert prefix))
     (dotimes (ii (length timelines))
       (write-text-centered-on (plist-get (elt timelines ii) 'name)
                               (plist-get (elt timelines ii) 'center)))
     (newline)
 
     (dolist (elt messages)
-      (write-vertical-space timelines)
+      (write-vertical-space timelines prefix)
       (newline)
 
       ;; write label
       (let ((text (plist-get elt 'label))
             center)
         (when text
-          (write-vertical-space timelines)
+          (write-vertical-space timelines prefix)
           (newline)
           (forward-line -1)
           (setq center (floor (/ (+ (plist-get (elt timelines (plist-get elt 'from)) 'center)
@@ -223,7 +230,7 @@
           (forward-line)))
 
       ;; write arrow
-      (write-vertical-space timelines)
+      (write-vertical-space timelines prefix)
       (newline)
       (forward-line -1)
       (write-arrow (plist-get (elt timelines (plist-get elt 'from)) 'center)
@@ -231,8 +238,7 @@
                    (plist-get elt 'dashed))
       (forward-line))
 
-    (write-vertical-space timelines)
-    (newline)
+    (write-vertical-space timelines prefix)
     (goto-char top)))
 
 (provide 'sequence)

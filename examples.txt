@@ -64,20 +64,32 @@ person1 person2 kitchen
 
     person1            person2         kitchen     
        |                 |               |
-       |  doSomethingImportant()               |
+       |  doSomethingVerboselyNamed()               |
        |---------------->|               |
        |                 |               |
        |                |-              > |
        |                 |              |
-       |  return        |<            - - |
+       |                 |<            - - |
+            return
        |<------ ---------|               |
        | message 1232                    |               |
        | ------------------------------->                      |               |
-       |  returned again            |               |
+       |  returned something else            |               |
        |<  - - - - -              -              -|
 
 
-   person1     person2     person3       p4
-      |           |        |           |
-      |           |< - -ret - - -|           |
+#
+# person1 person2
+#
 
+;;
+;; person1 person2
+;;
+
+/*
+ * person1 person2
+ */
+
+//
+// person1 person2
+//
