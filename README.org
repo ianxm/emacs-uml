@@ -10,7 +10,7 @@
 
 * example
   
-uml.el can convert this content:
+uml.el will convert this content:
 
 #+BEGIN_SRC
    person1     person2     kitchen
@@ -68,32 +68,166 @@ into this:
 **** a list of names will be spread out and centered over timelines
 
 #+BEGIN_SRC
-person1 person2 kitchen
+person1 person2 person3
 #+END_SRC
 
   becomes
 
 #+BEGIN_SRC
-   person1     person2     kitchen
+   person1     person2     person3
       |           |           |
 #+END_SRC
 
 **** a dash next to a timeline will create an arrow to its neighbor
 
 #+BEGIN_SRC
-   person1     person2     kitchen
+   person1     person2     person3
       |-           |           |
 #+END_SRC
 
   becomes
 
 #+BEGIN_SRC
-   person1     person2     kitchen
+   person1     person2     person3
       |           |           |
       |---------->|           |
       |           |           |
 #+END_SRC
 
+**** a greater-than or less-than next to a timeline indicates the end of the arrow
+
+#+BEGIN_SRC
+   person1     person2     person3
+      |-           |          >|
+#+END_SRC
+
+  becomes
+
+#+BEGIN_SRC
+   person1     person2     person3
+      |           |           |
+      |---------------------->|
+      |           |           |
+#+END_SRC
+
+**** arrows can go to the left also
+
+#+BEGIN_SRC
+   person1     person2     person3
+      |<           |          -|
+#+END_SRC
+
+  becomes
+
+#+BEGIN_SRC
+   person1     person2     person3
+      |           |           |
+      |<----------------------|
+      |           |           |
+#+END_SRC
+
+**** arrows will be dashed if there is a non-consecutive missing dash at any point in the line
+
+#+BEGIN_SRC
+   person1     person2     person3
+      |- -          |          >|
+#+END_SRC
+
+  or
+
+#+BEGIN_SRC
+   person1     person2     person3
+      |- ---------------------->|
+#+END_SRC
+
+  becomes
+
+#+BEGIN_SRC
+   person1     person2     person3
+      |           |           |
+      | - - - - - - - - - - ->|
+      |           |           |
+#+END_SRC
+
+**** labels can be entered on the line above or the same line as the arrow
+
+#+BEGIN_SRC
+   person1     person2     person3
+      | call          |          |
+      |-           |          |
+#+END_SRC
+
+  or
+
+#+BEGIN_SRC
+   person1     person2     person3
+      |- call        |          |
+#+END_SRC
+
+  becomes
+
+#+BEGIN_SRC
+   person1     person2     person3
+      |           |           |
+      |   call    |           |
+      |---------->|           |
+      |           |           |
+#+END_SRC
+
+
+**** diagrams can be embedded in source code comments
+
+#+BEGIN_SRC
+#
+# person1 person2
+#    |-
+
+;;
+;; person1 person2
+;;   |-
+;;
+
+/*
+ * person1 person2
+ *   |-
+ */
+
+//
+// person1 person2
+//   |-
+//
+#+END_SRC
+
+  becomes
+
+#+BEGIN_SRC
+#
+#   person1     person2
+#      |           |
+#      |---------->|
+#      |           |
+
+;;
+;;   person1     person2
+;;      |           |
+;;      |---------->|
+;;      |           |
+;;
+
+/*
+ *   person1     person2
+ *      |           |
+ *      |---------->|
+ *      |           |
+ */
+
+//
+//   person1     person2
+//      |           |
+//      |---------->|
+//      |           |
+//
+#+END_SRC
 
 * todo
 

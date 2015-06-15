@@ -1,47 +1,47 @@
 ============================= center, separate timelines
 
-person1 person2 kitchen
+person1 person2 person3
 
 
-   person1     person2     kitchen
+   person1     person2     person3
       |           |           |
 
 ============================= draw arrow to neighbor
 
-   person1     person2     kitchen
+   person1     person2     person3
       |-           |           |
 
-   person1     person2     kitchen
+   person1     person2     person3
       |           |           |
       |---------->|           |
       |           |           |
 
 ============================= arrow to any timeline
 
-   person1     person2     kitchen
+   person1     person2     person3
       |-           |          >|
 
-   person1     person2     kitchen
+   person1     person2     person3
       |           |           |
       |---------------------->|
       |           |           |
 
 ============================= arrow going left
 
-   person1     person2     kitchen
+   person1     person2     person3
       |<           |          -|
 
-   person1     person2     kitchen
+   person1     person2     person3
       |           |           |
       |<----------------------|
       |           |           |
 
 ============================= dashed arrow
 
-   person1     person2     kitchen
+   person1     person2     person3
       |- -          |          >|
 
-   person1     person2     kitchen
+   person1     person2     person3
       |           |           |
       | - - - - - - - - - - ->|
       |           |           |
@@ -49,11 +49,11 @@ person1 person2 kitchen
 
 ============================= center label
 
-   person1     person2     kitchen
+   person1     person2     person3
       | call          |          |
       |-           |          |
 
-   person1     person2     kitchen
+   person1     person2     person3
       |           |           |
       |   call    |           |
       |---------->|           |
@@ -62,12 +62,12 @@ person1 person2 kitchen
 
 ============================= spread timelines to fit labels
 
-    person1      person2         kitchen     
+    person1      person2         person3     
        |            |               |
        | make me a sandwich            |               |
        |-            |               |
 
-   person1               person2     kitchen
+   person1               person2     person3
       |                     |           |
       | make me a sandwich  |           |
       |-------------------->|           |
