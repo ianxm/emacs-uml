@@ -1,3 +1,29 @@
+(defun uml-forward-timeline ()
+  "move point to the next timeline bar"
+  (interactive)
+  (let ((start (point))
+        word)
+    (forward-word)
+    (setq word (point))
+    (goto-char start)
+    (forward-char)
+    (while (not (eq ?| (char-after)))
+      (forward-char))
+    (goto-char (min (point) word))))
+
+(defun uml-back-timeline ()
+  "move point to the previous timeline bar"
+  (interactive)
+  (let ((start (point))
+        word)
+    (forward-word -1)
+    (setq word (point))
+    (goto-char start)
+    (forward-char -1)
+    (while (not (eq ?| (char-after)))
+      (forward-char -1))
+    (goto-char (max (point) word))))
+
 (defun write-text-centered-on (text target)
   "write given text centered on the given column"
   ;; (message "write-text-centered-on %s %d" text target)
@@ -210,6 +236,8 @@
     (goto-char top)))
 
 (provide 'sequence)
+(provide 'uml-next-timeline)
+(provide 'uml-prev-timeline)
 
 (define-minor-mode uml-mode
   "Toggle UML mode.
@@ -227,5 +255,7 @@ See the command \\[seqence]."
  :lighter " uml"
  ;; The minor mode bindings.
  :keymap
- `((,(kbd "C-c C-c") . sequence))
+ `((,(kbd "C-c C-c") . sequence)
+   (,(kbd "M-f") . uml-forward-timeline)
+   (,(kbd "M-b") . uml-back-timeline))
  :group 'uml)
