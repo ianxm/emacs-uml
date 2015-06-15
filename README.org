@@ -12,6 +12,7 @@
   
 uml.el can convert this content:
 
+#+BEGIN_SRC
    person1     person2     kitchen
       |- make me a sandwich  |           |
       | no way   - -|           |
@@ -19,9 +20,11 @@ uml.el can convert this content:
       |          |-do it           |
       |          |          - -|
       |  sandwich - -|           |
+#+END_SRC
 
 into this:
 
+#+BEGIN_SRC
    person1                    person2     kitchen
       |                          |           |
       |   make me a sandwich     |           |
@@ -41,6 +44,7 @@ into this:
       |        sandwich          |           |
       |< - - - - - - - - - - - - |           |
       |                          |           |
+#+END_SRC
 
 * features
 
@@ -61,28 +65,28 @@ into this:
 
 * usage
 
-*** a list of names will be spread out and centered over timelines
+**** a list of names will be spread out and centered over timelines
 
-**** before
-#+BEGIN_SRC txt
+#+BEGIN_SRC
 person1 person2 kitchen
 #+END_SRC
 
-**** after
-#+BEGIN_SRC txt
+  becomes
+
+#+BEGIN_SRC
    person1     person2     kitchen
       |           |           |
 #+END_SRC
 
-*** a dash next to a timeline will create an arrow to its neighbor
+**** a dash next to a timeline will create an arrow to its neighbor
 
-**** before
 #+BEGIN_SRC
    person1     person2     kitchen
       |-           |           |
 #+END_SRC
 
-**** after
+  becomes
+
 #+BEGIN_SRC
    person1     person2     kitchen
       |           |           |
