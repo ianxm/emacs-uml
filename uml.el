@@ -1,3 +1,32 @@
+;;; uml.el --- Minor mode for writing ascii uml sequence diagrams
+
+;; Copyright (C) 2015 Ian Martins
+
+;; Version: 0.0.1
+;; Keywords: uml sequence diagram
+;; Author: Ian Martins <ianxm@jhu.edu>
+;; URL: http://github.com/ianxm/emacs-uml
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+;;; Commentary
+
+;; provides functions that help in writing ascii uml sequence diagrams
+
 (defun uml-forward-timeline ()
   "move point to the next timeline bar"
   (interactive)
@@ -90,7 +119,7 @@
         (plist-put elt 'center (+ (plist-get elt 'center) needed))
         (setq ii (1+ ii))))))
 
-(defun sequence ()
+(defun uml-sequence-diagram ()
   "formats a sequence diagram"
   (interactive)
   (let (top         ;; first line in buffer of diagram
@@ -241,27 +270,27 @@
     (write-vertical-space timelines prefix)
     (goto-char top)))
 
-(provide 'sequence)
+(provide 'sequence-diagram)
 (provide 'uml-next-timeline)
 (provide 'uml-prev-timeline)
 
 (define-minor-mode uml-mode
-  "Toggle UML mode.
+  "Toggle uml mode.
 Interactively with no argument, this command toggles the mode.
 A positive prefix argument enables the mode, any other prefix
 argument disables it.  From Lisp, argument omitted or nil enables
 the mode, `toggle' toggles the state.
 
-When UML mode is enabled, C-c while the point is in a
+When uml mode is enabled, C-c while the point is in a
 sequence diagram cleans up the formatting of the diagram.
-See the command \\[seqence]."
+See the command \\[uml-seqence-diagram]."
  ;; The initial value.
  :init-value nil
  ;; The indicator for the mode line.
  :lighter " uml"
  ;; The minor mode bindings.
  :keymap
- `((,(kbd "C-c C-c") . sequence)
+ `((,(kbd "C-c C-c") . uml-sequence-diagram)
    (,(kbd "M-f") . uml-forward-timeline)
    (,(kbd "M-b") . uml-back-timeline))
  :group 'uml)

@@ -1,95 +1,108 @@
 ============================= center, separate timelines
 
 person1 person2 kitchen
-     |           |   |
 
-  person1     person2      kitchen
-     |           |            |
 
-============================= draw arrow
+   person1     person2     kitchen
+      |           |           |
 
-    person1      person2         kitchen     
-       |            |               |
-       |          > |               |
+============================= draw arrow to neighbor
 
-    person1      person2         kitchen     
-       |            |               |
-       |----------->|               |
+   person1     person2     kitchen
+      |-           |           |
 
-============================= longer arrow
+   person1     person2     kitchen
+      |           |           |
+      |---------->|           |
+      |           |           |
 
-    person1      person2         kitchen     
-       |            |               |
-       |-           |              >|
+============================= arrow to any timeline
 
-    person1      person2         kitchen     
-       |            |               |
-       |--------------------------->|
+   person1     person2     kitchen
+      |-           |          >|
+
+   person1     person2     kitchen
+      |           |           |
+      |---------------------->|
+      |           |           |
+
+============================= arrow going left
+
+   person1     person2     kitchen
+      |<           |          -|
+
+   person1     person2     kitchen
+      |           |           |
+      |<----------------------|
+      |           |           |
 
 ============================= dashed arrow
 
-    person1      person2         kitchen     
-       |            |               |
-       |- -         |               |
+   person1     person2     kitchen
+      |- -          |          >|
 
-    person1      person2         kitchen     
-       |            |               |
-       |- - - - - - - - - - - - - ->|
+   person1     person2     kitchen
+      |           |           |
+      | - - - - - - - - - - ->|
+      |           |           |
+
 
 ============================= center label
 
-    person1      person2         kitchen     
-       |            |               |
-       | doit           |               |
-       |----------->|               |
+   person1     person2     kitchen
+      | call          |          |
+      |-           |          |
+
+   person1     person2     kitchen
+      |           |           |
+      |   call    |           |
+      |---------->|           |
+      |           |           |
+
+
+============================= spread timelines to fit labels
 
     person1      person2         kitchen     
        |            |               |
-       |    doit    |               |
-       |----------->|               |
+       | make me a sandwich            |               |
+       |-            |               |
 
-============================= center label, spread out timelines
+   person1               person2     kitchen
+      |                     |           |
+      | make me a sandwich  |           |
+      |-------------------->|           |
+      |                     |           |
 
-    person1      person2         kitchen     
-       |            |               |
-       | doSomethingImportant    |               |
-       |----------->|               |
 
-    person1                   person2         kitchen     
-       |                        |               |
-       |  doSomethingImportant  |               |
-       |----------------------->|               |
-
-============================= test
-
-    person1            person2         kitchen     
-       |                 |               |
-       |  doSomethingVerboselyNamed()               |
-       |---------------->|               |
-       |                 |               |
-       |                |-              > |
-       |                 |              |
-       |                 |<            - - |
-            return
-       |<------ ---------|               |
-       | message 1232                    |               |
-       | ------------------------------->                      |               |
-       |  returned something else            |               |
-       |<  - - - - -              -              -|
-
+============================= can be embeded in comments
 
 #
 # person1 person2
-#
+#    |-
 
 ;;
 ;; person1 person2
+;;   |-
 ;;
 
 /*
  * person1 person2
+ *   |-
  */
 
 //
 // person1 person2
+//   |-
 //
+
+
+============================= example
+
+   person1     person2     kitchen
+      |- make me a sandwich  |           |
+      | no way   - -|           |
+      |--sudo make me a sandwich                     |           |
+      |          |-do it           |
+      |          |          - -|
+      |  sandwich - -|           |
+
