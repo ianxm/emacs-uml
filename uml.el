@@ -136,18 +136,22 @@
     (setq line (buffer-substring (point) (line-end-position)))
     (while (and
             (not (string-match "^[\s+/;#\*]*$" line))
-            (eq 0 (forward-line -1)))
+            (not (= (point) (point-min))))
+      (forward-line -1)
       (setq line (buffer-substring (point) (line-end-position))))
-    (forward-line)
+    (when (string-match "^[\s+/;#\*]*$" line)
+      (forward-line))
     (setq top (point))
 
     ;; find the bottom of the diagram
     (setq line (buffer-substring (point) (line-end-position)))
     (while (and
             (not (string-match "^[\s+/;#\*]*$" line))
-            (eq 0 (forward-line)))
+            (not (= (point) (point-max))))
+      (forward-line)
       (setq line (buffer-substring (point) (line-end-position))))
-    (forward-line -1)
+    (if (not (= (point) (point-max)))
+        (forward-line -1))
     (setq bottom (line-end-position))
     ;; (message "top: %d bottom: %d" top bottom)
     ;; (message "top: %d bottom: %d" (count-lines (point-min) top) (count-lines (point-min) bottom))
@@ -190,7 +194,7 @@
           from
           to
           found)
-      (while (<= (point) bottom)
+      (while (< (point) bottom)
         (forward-line 1)
         (setq line (buffer-substring (point) (line-end-position)))
         ;; (message "checking %s" line)
