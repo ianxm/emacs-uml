@@ -119,6 +119,7 @@
   "spread out timelines so that given label fits"
   (let (leftcol
         rightcol
+        needed
         delta
         ii
         elt)
@@ -221,31 +222,32 @@
         ;; (message "checking %s" line)
         (setq dashed (string-match "\- \-" line))
 
-        (setq found nil)
-        (when (string-match "\\([a-zA-Z0-9][a-zA-Z0-9\(\) ]*?[a-zA-Z0-9\(\)]?\\)[ |>\-]*$" line)
-          (setq label (match-string 1 line)))
+        (if (string-match "\\([a-zA-Z0-9][a-zA-Z0-9\(\) ]*?[a-zA-Z0-9\(\)]?\\)[ |>\-]*$" line)
+            (setq label (match-string 1 line)))
 
-        (when (and (not found) (string-match "\-.*>" line)) ;; ->
+        (setq found nil)
+        (cond
+         ((string-match "\-.*>" line) ;; ->
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
           (setq to (find-nearest-timeline timelines (match-end 0)))
           (setq found t))
 
-        (when (and (not found) (string-match "<.*\-" line)) ;; <-
+         ((string-match "<.*\-" line) ;; <-
           (setq from (find-nearest-timeline timelines (match-end 0)))
           (setq to (find-nearest-timeline timelines (match-beginning 0)))
           (setq found t))
 
-        (when (and (not found) (string-match "|\-" line)) ;; |-
+         ((string-match "|\-" line) ;; |-
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
           (setq to (1+ from))
           (if (< to (length timelines))
-            (setq found t)))
+              (setq found t)))
 
-        (when (and (not found) (string-match "\-|" line)) ;; -|
+         ((string-match "\-|" line) ;; -|
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
           (setq to (- from 1))
           (if (>= to 0)
-            (setq found t)))
+              (setq found t))))
 
         (when found
           (setq messages (append messages (list (list 'label  label
