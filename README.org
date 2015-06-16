@@ -63,11 +63,12 @@ into this:
   4. move the point onto a graph and hit "C-c C-c"
 
 * usage
-
-**** uml-mode provides three key bindings.
+**** uml-mode provides some key bindings.
      - C-c C-c :: redraw the diagram at the point
      - M-f :: move forward to the next word or timeline
      - M-b :: move backward to the previous word or timeline
+     - M-S-left :: shift a timeline to the left
+     - M-S-right :: shift a timeline to the right
 
 **** a list of names will be spread out and centered over timelines
 

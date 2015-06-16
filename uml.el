@@ -230,25 +230,32 @@
          ((string-match "\-.*>" line) ;; ->
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
           (setq to (find-nearest-timeline timelines (match-end 0)))
-          (setq found t))
+          (if (not (= from to))
+              (setq found t)
+            (message "ignoring self message")))
+         
 
          ((string-match "<.*\-" line) ;; <-
           (setq from (find-nearest-timeline timelines (match-end 0)))
           (setq to (find-nearest-timeline timelines (match-beginning 0)))
-          (setq found t))
+          (if (not (= from to))
+              (setq found t)
+            (message "ignoring self message")))
 
          ((string-match "|\-" line) ;; |-
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
           (setq to (1+ from))
           (if (< to (length timelines))
-              (setq found t)))
+              (setq found t)
+            (message "ignoring out of bounds message")))
 
          ((string-match "\-|" line) ;; -|
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
           (setq to (- from 1))
           (if (>= to 0)
-              (setq found t))))
-
+              (setq found t)
+            (message "ignoring out of bounds message"))))
+      
         (when found
           (setq messages (append messages (list (list 'label  label
                                                       'from   from
