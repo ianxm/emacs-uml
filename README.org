@@ -1,4 +1,4 @@
-* overview
+z* overview
 
   [[http://www.gnu.org/software/emacs/][emacs]] is a text editor.  an extensible one.  it is mainly used for
   coding, but it can also do anything else.  uml is a modeling
@@ -180,7 +180,6 @@ person1 person2 person3
       |           |           |
 #+END_SRC
 
-
 **** diagrams can be embedded in source code comments
 
 #+BEGIN_SRC
@@ -237,6 +236,8 @@ person1 person2 person3
 
 * todo
 
+  - insert delete timelines
+  - rearrange timelines
   - multi-line timeline titles
   - separators
   - self messages
