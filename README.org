@@ -237,7 +237,6 @@ person1 person2 person3
 * todo
 
   - insert delete timelines
-  - rearrange timelines
   - multi-line timeline titles
   - separators
   - self messages

@@ -55,9 +55,23 @@
             (> (point) word))
       (forward-char -1))))
 
+(defun uml-swap-left ()
+  "swap the timeline to the left"
+  (interactive)
+  (redraw-sequence-diagram (list 'name "swap left" 'col (point))))
+
+(defun uml-swap-right ()
+  "swap the timeline to the right"
+  (interactive)
+  (redraw-sequence-diagram (list 'name "swap right" 'col (point))))
+
+(defun uml-sequence-diagram ()
+  "formats a sequence diagram"
+  (interactive)
+  (redraw-sequence-diagram nil))
+
 (defun write-text-centered-on (text target)
   "write given text centered on the given column"
-  ;; (message "write-text-centered-on %s %d" text target)
   (let* ((halfname (floor (/ (length text) 2)))
          (col (- target halfname))) ;; target-pos-len/2
     (move-to-column col t)
@@ -65,7 +79,6 @@
 
 (defun write-vertical-space (timelines prefix)
   "write a row of only timelines"
-  ;; (message "write-vertical-space")
   (if prefix
       (insert prefix))
   (dotimes (ii (length timelines))
@@ -75,7 +88,6 @@
 
 (defun find-nearest-timeline (timelines col)
   "return the index of the nearest timeline to the given col"
-  ;; (message "find-nearest-timeline")
   (let (ret
         delta
         olddelta)
@@ -105,7 +117,6 @@
 
 (defun fit-label-between (timelines left right width)
   "spread out timelines so that given label fits"
-  ;; (message "fit-label-between")
   (let (leftcol
         rightcol
         delta
@@ -121,9 +132,20 @@
         (plist-put elt 'center (+ (plist-get elt 'center) needed))
         (setq ii (1+ ii))))))
 
-(defun uml-sequence-diagram ()
-  "formats a sequence diagram"
-  (interactive)
+(defun swap-timelines (timelines messages col1 col2)
+  "swap two timelines"
+  (let (tmp)
+    (setq tmp (elt timelines col1))
+    (aset timelines col1 (elt timelines col2))
+    (aset timelines col2 tmp))
+  (dolist (elt messages)
+    (if (= (plist-get elt 'from) col1) (plist-put elt 'from col2)
+      (if (= (plist-get elt 'from) col2) (plist-put elt 'from col1)))
+    (if (= (plist-get elt 'to) col1) (plist-put elt 'to col2)
+      (if (= (plist-get elt 'to) col2) (plist-put elt 'to col1)))))
+
+(defun redraw-sequence-diagram (adjust)
+  "redraws a sequence diagram"
   (let (top         ;; first line in buffer of diagram
         bottom      ;; last line in buffer of diagram
         line        ;; current line content
@@ -178,8 +200,7 @@
           (ii 0))
       (while (string-match "\\([a-zA-Z0-9]+\\)" line start)
         (aset timelines ii (list 'name       (match-string 1 line)
-                                 'origcenter (floor (/ (+ (match-beginning 1) (match-end 1)) 2))
-                                 'center     (+ (* 12 ii) 6 (length prefix))))
+                                 'origcenter (floor (/ (+ (match-beginning 1) (match-end 1)) 2))))
         (setq ii (1+ ii))
         (setq start (match-end 1))))
 
@@ -227,7 +248,6 @@
             (setq found t)))
 
         (when found
-          (fit-label-between timelines (min to from) (max to from) (+ (length label) 4))
           (setq messages (append messages (list (list 'label  label
                                                       'from   from
                                                       'to     to
@@ -238,7 +258,36 @@
     (delete-char (- bottom top))
 
 
-    ;; space out timelines
+    ;; make adjustments
+    (cond 
+     ((string= "swap left" (plist-get adjust 'name)) 
+      (let (current swapwith)
+        (setq current (find-nearest-timeline timelines (plist-get adjust 'col)))
+        (setq swapwith (- current 1))
+        (if (or (< swapwith 0) (>= swapwith (length timelines)))
+            (plist-put adjust 'movetocol current)
+          (plist-put adjust 'movetocol swapwith)
+          (swap-timelines timelines messages current swapwith))))
+     ((string= "swap right" (plist-get adjust 'name)) 
+      (let (current swapwith)
+        (setq current (find-nearest-timeline timelines (plist-get adjust 'col)))
+        (setq swapwith (1+ current))
+        (if (or (< swapwith 0) (>= swapwith (length timelines)))
+            (plist-put adjust 'movetocol current)
+          (plist-put adjust 'movetocol swapwith)
+          (swap-timelines timelines messages current swapwith))))
+     )
+
+    ;; space out timelines to fit labels
+    (dotimes (ii (length timelines))
+      (plist-put (elt timelines ii) 'center (+ (* 12 ii) 6 (length prefix))))
+    (dolist (elt messages)
+      (fit-label-between timelines 
+                         (min (plist-get elt 'to) (plist-get elt 'from))
+                         (max (plist-get elt 'to) (plist-get elt 'from))
+                         (+ (length (plist-get elt 'label)) 4)))
+
+    ;; write timeline names
     (if prefix
         (insert prefix))
     (dotimes (ii (length timelines))
@@ -274,7 +323,9 @@
       (forward-line))
 
     (write-vertical-space timelines prefix)
-    (goto-char top)))
+    (goto-char top)
+    (if (plist-get adjust 'movetocol)
+        (move-to-column (plist-get (elt timelines (plist-get adjust 'movetocol)) 'center)))))
 
 (define-minor-mode uml-mode
   "Toggle uml mode.
@@ -293,6 +344,8 @@ See the command \\[uml-seqence-diagram]."
  ;; The minor mode bindings.
  :keymap
  `((,(kbd "C-c C-c") . uml-sequence-diagram)
+   (,(kbd "<M-S-left>") . uml-swap-left)
+   (,(kbd "<M-S-right>") . uml-swap-right)
    (,(kbd "M-f") . uml-forward-timeline)
    (,(kbd "M-b") . uml-back-timeline))
  :group 'uml)
