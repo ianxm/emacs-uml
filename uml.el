@@ -153,7 +153,7 @@
     (setq needed (- (+ leftcol  width) rightcol))
     (when (> needed 0)
       (setq ii right)
-      (while (< ii (length timelines)) ;; dont need nth
+      (while (< ii (length timelines)) ;; TODO dont need nth
         (setq elt (nth ii timelines))
         (plist-put elt 'center (+ (plist-get elt 'center) needed))
         (setq ii (1+ ii))))))
@@ -172,7 +172,6 @@
 
 (defun delete-timeline (timelines messages col)
   "delete the given timeline"
-  
 )
 
 (defun redraw-sequence-diagram (adjust)
@@ -307,11 +306,18 @@
           (swap-timelines timelines messages current swapwith))))
 
      ((string= "delete" (plist-get adjust 'name))
-      (let (current delete)
+      (let (current col)
         (setq current (find-nearest-timeline timelines (plist-get adjust 'col)))
-        (setq delete (- current 1))
-        (when (> delete 0)
-          (delete-timeline timelines messages delete))))
+        (setq col (- current 1))
+        (when (>= col 0)
+          (setq timelines (delete (nth col timelines) timelines))
+          (dolist (elt messages)
+            (let ((from (plist-get elt 'from))
+                  (to   (plist-get elt 'to)))
+              (if (or (= from col) (= to col))
+                  (setq messages (delete elt messages))
+                (if (> from col) (plist-put elt 'from (- from 1)))
+                (if (> to col) (plist-put elt 'to (- to 1)))))))))
      )
 
     ;; space out timelines to fit labels
