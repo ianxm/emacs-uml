@@ -72,8 +72,10 @@ into this:
      - C-c C-c :: redraw the diagram at the point
      - M-f :: move forward to the next word or timeline
      - M-b :: move backward to the previous word or timeline
-     - M-S-left :: shift a timeline to the left
-     - M-S-right :: shift a timeline to the right
+     - M-left :: shift a timeline to the left
+     - M-right :: shift a timeline to the right
+     - M-S-left :: delete the timeline to the left
+     - M-S-right :: insert a timeline to the left
 
 * tutorial
 
@@ -125,7 +127,7 @@ person1 person2 person3
 
 **** arrow to any timeline
 
-    an angle bracket next to a timeline indicates the other end of the
+    an angle bracket near a timeline indicates the other end of the
     arrow.  both the angle bracket and the dash are used to determine
     which timelines to connect.  there can only be one arrow per line.
 
