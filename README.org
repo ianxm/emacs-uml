@@ -295,7 +295,6 @@ person1 person2 person3
 
 * todo
 
-  - insert delete timelines
   - multi-line timeline titles
   - separators
   - class diagrams
