@@ -14,12 +14,13 @@ uml.el will convert this:
 
 #+BEGIN_SRC
    person1     person2     kitchen
-      |- make me a sandwich  |           |
-      | no way   - -|           |
-      |--sudo make me a sandwich                     |           |
-      |          |-do it           |
-      |          |          - -|
-      |  sandwich - -|           |
+      |- make me a sandwich
+       no way   - -|
+      |--sudo make me a sandwich
+                |-go     >
+                              < make it
+                 <          - -|
+       <sandwich - -|
 #+END_SRC
 
 into this:
@@ -36,8 +37,11 @@ into this:
       | sudo make me a sandwich  |           |
       |------------------------->|           |
       |                          |           |
-      |                          |   do it   |
+      |                          |    go     |
       |                          |---------->|
+      |                          |           |
+      |                          |           | --,
+      |                          |           |<--' make it
       |                          |           |
       |                          |< - - - - -|
       |                          |           |
@@ -60,9 +64,10 @@ into this:
   1. install emacs
   2. get [[https://raw.github.com/ianxm/emacs-uml/master/uml.el][uml.el]], add it to your emacs installation
   3. run "M-x uml-mode"
-  4. move the point onto a graph and hit "C-c C-c"
+  4. move the point onto graph content and hit "C-c C-c" to redraw it
 
 * usage
+
 **** uml-mode provides some key bindings.
      - C-c C-c :: redraw the diagram at the point
      - M-f :: move forward to the next word or timeline
@@ -70,22 +75,39 @@ into this:
      - M-S-left :: shift a timeline to the left
      - M-S-right :: shift a timeline to the right
 
-**** a list of names will be spread out and centered over timelines
+* tutorial
 
-  if you move the point over a line with the following content:
+**** timelines
+
+    if you move the point over a line with some names and hit C-c C-c,
+    the list of names will be spread out and centered over timelines.
+    timeline names cannot contain spaces.
+
+    put the following content in a buffer, enabled uml-mode, and hit
+    C-c C-c while the point is on the line.
 
 #+BEGIN_SRC
 person1 person2 person3
 #+END_SRC
 
-  and hit C-c C-c, the line is replaced with:
+    the above line will be replaced with:
 
 #+BEGIN_SRC
    person1     person2     person3
       |           |           |
 #+END_SRC
 
-**** a dash next to a timeline will create an arrow to its neighbor
+    at any point content can be added to or removed from a diagram
+    and "redraw" run to upadate it.
+
+**** arrow to neighbor
+
+    arrows can be added by putting a single dash next to a timeline
+    (pipe character below a timeline name).  this will draw an arrow
+    to the nearest neighbor in that direction.
+
+    add a dash next to a timeline, as shown below, and redraw with C-c
+    C-c to create an arrow to its neighbor.
 
 #+BEGIN_SRC
    person1     person2     person3
@@ -101,7 +123,11 @@ person1 person2 person3
       |           |           |
 #+END_SRC
 
-**** a greater-than or less-than next to a timeline indicates the end of the arrow
+**** arrow to any timeline
+
+    an angle bracket next to a timeline indicates the other end of the
+    arrow.  both the angle bracket and the dash are used to determine
+    which timelines to connect.  there can only be one arrow per line.
 
 #+BEGIN_SRC
    person1     person2     person3
@@ -117,7 +143,9 @@ person1 person2 person3
       |           |           |
 #+END_SRC
 
-**** arrows can go to the left also
+**** arrow to the left
+
+    arrows can go to the left also by reversing the angle bracket and dash
 
 #+BEGIN_SRC
    person1     person2     person3
@@ -133,7 +161,10 @@ person1 person2 person3
       |           |           |
 #+END_SRC
 
-**** arrows will be dashed if there is a non-consecutive missing dash at any point in the line
+**** dashed arrows
+
+    arrows will be dashed if there is a non-consecutive missing dash
+    at any point in the line.
 
 #+BEGIN_SRC
    person1     person2     person3
@@ -156,7 +187,10 @@ person1 person2 person3
       |           |           |
 #+END_SRC
 
-**** labels can be entered on the line above or the same line as the arrow
+**** labels
+
+    labels can be entered on the line above or the same line as the
+    arrow.  there can only be one label per line.
 
 #+BEGIN_SRC
    person1     person2     person3
@@ -181,7 +215,29 @@ person1 person2 person3
       |           |           |
 #+END_SRC
 
-**** diagrams can be embedded in source code comments
+**** self arrows
+
+    self arrows are made by keeping the angle bracket and any dashes
+    under the same timeline.
+
+#+BEGIN_SRC
+   person1     person2     person3
+      |< call         |          |
+#+END_SRC
+
+  becomes
+
+#+BEGIN_SRC
+   person1     person2     person3
+      |           |           |
+      | --,       |           |
+      |<--' call  |           |
+      |           |           |
+#+END_SRC
+
+**** comments
+
+    diagrams can be embedded in source code comments
 
 #+BEGIN_SRC
 #
@@ -240,6 +296,5 @@ person1 person2 person3
   - insert delete timelines
   - multi-line timeline titles
   - separators
-  - self messages
   - class diagrams
 

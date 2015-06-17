@@ -115,6 +115,19 @@
     (delete-char (- delta 1)))
   )
 
+(defun write-self-arrow (col text)
+  "write arrow over row"
+  (move-to-column (1+ col))
+  (insert " --,")
+  (delete-char (min 4 (- (line-end-position) (point))))
+  (forward-line)
+  (move-to-column (1+ col))
+  (if (not text)
+      (setq text ""))
+  (insert (format "<--' %s" text))
+  (delete-char (min (+ 5 (length text)) (- (line-end-position) (point))))
+)
+
 (defun fit-label-between (timelines left right width)
   "spread out timelines so that given label fits"
   (let (leftcol
@@ -230,17 +243,17 @@
          ((string-match "\-.*>" line) ;; ->
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
           (setq to (find-nearest-timeline timelines (match-end 0)))
-          (if (not (= from to))
-              (setq found t)
-            (message "ignoring self message")))
-         
+          (setq found t))
 
          ((string-match "<.*\-" line) ;; <-
           (setq from (find-nearest-timeline timelines (match-end 0)))
           (setq to (find-nearest-timeline timelines (match-beginning 0)))
-          (if (not (= from to))
-              (setq found t)
-            (message "ignoring self message")))
+          (setq found t))
+
+         ((string-match "<" line) ;; <
+          (setq from (find-nearest-timeline timelines (match-end 0)))
+          (setq to (find-nearest-timeline timelines (match-beginning 0)))
+          (setq found t))
 
          ((string-match "|\-" line) ;; |-
           (setq from (find-nearest-timeline timelines (match-beginning 0)))
@@ -291,10 +304,20 @@
     (dotimes (ii (length timelines))
       (plist-put (elt timelines ii) 'center (+ (* 12 ii) 6 (length prefix))))
     (dolist (elt messages)
-      (fit-label-between timelines 
-                         (min (plist-get elt 'to) (plist-get elt 'from))
-                         (max (plist-get elt 'to) (plist-get elt 'from))
-                         (+ (length (plist-get elt 'label)) 4)))
+      (let* ((to    (plist-get elt 'to))
+             (from  (plist-get elt 'from))
+             (left  (min to from))
+             (right (max to from)))
+        (if (= left right)
+            (if (< (1+ left) (length timelines))
+                (fit-label-between timelines ;; self arrow
+                                   left
+                                   (1+ left)
+                                   (+ (length (plist-get elt 'label)) 8)))
+          (fit-label-between timelines
+                             left
+                             right
+                             (+ (length (plist-get elt 'label)) 4)))))
 
     ;; write timeline names
     (if prefix
@@ -304,32 +327,44 @@
                               (plist-get (elt timelines ii) 'center)))
     (newline)
 
+    ;; write messages
     (dolist (elt messages)
       (write-vertical-space timelines prefix)
       (newline)
 
-      ;; write label
-      (let ((text (plist-get elt 'label))
+      (let* ((text       (plist-get elt 'label))
+            (selfmessage (= (plist-get elt 'from) (plist-get elt 'to)))
+            (from        (plist-get elt 'from))
+            (to          (plist-get elt 'to))
+            (fromcenter  (plist-get (elt timelines from) 'center))
+            (tocenter    (plist-get (elt timelines to) 'center))
             center)
-        (when text
+
+        ;; write label
+        (when (and text (not selfmessage))
           (write-vertical-space timelines prefix)
           (newline)
           (forward-line -1)
-          (setq center (floor (/ (+ (plist-get (elt timelines (plist-get elt 'from)) 'center)
-                                    (plist-get (elt timelines (plist-get elt 'to)) 'center))
-                                 2)))
+          (setq center (floor (/ (+ fromcenter tocenter) 2)))
           (write-text-centered-on text center)
           (delete-char (length text))
-          (forward-line)))
+          (forward-line))
 
-      ;; write arrow
-      (write-vertical-space timelines prefix)
-      (newline)
-      (forward-line -1)
-      (write-arrow (plist-get (elt timelines (plist-get elt 'from)) 'center)
-                   (plist-get (elt timelines (plist-get elt 'to)) 'center)
-                   (plist-get elt 'dashed))
-      (forward-line))
+        ;; write arrow
+        (if selfmessage
+            (progn
+              (write-vertical-space timelines prefix)
+              (newline)
+              (write-vertical-space timelines prefix)
+              (newline)
+              (forward-line -2)
+              (write-self-arrow fromcenter (plist-get elt 'label))
+              (forward-line))
+          (write-vertical-space timelines prefix)
+          (newline)
+          (forward-line -1)
+          (write-arrow fromcenter tocenter (plist-get elt 'dashed))
+          (forward-line))))
 
     (write-vertical-space timelines prefix)
     (goto-char top)
