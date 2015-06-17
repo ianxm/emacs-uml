@@ -118,7 +118,7 @@
 (defun write-self-arrow (col text)
   "write arrow over row"
   (move-to-column (1+ col))
-  (insert " --,")
+  (insert " --.")
   (delete-char (min 4 (- (line-end-position) (point))))
   (forward-line)
   (move-to-column (1+ col))

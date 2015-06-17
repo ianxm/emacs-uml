@@ -1,4 +1,4 @@
-z* overview
+* overview
 
   [[http://www.gnu.org/software/emacs/][emacs]] is a text editor.  an extensible one.  it is mainly used for
   coding, but it can also do anything else.  uml is a modeling
@@ -40,7 +40,7 @@ into this:
       |                          |    go     |
       |                          |---------->|
       |                          |           |
-      |                          |           | --,
+      |                          |           | --.
       |                          |           |<--' make it
       |                          |           |
       |                          |< - - - - -|
@@ -79,9 +79,9 @@ into this:
 
 **** timelines
 
-    if you move the point over a line with some names and hit C-c C-c,
-    the list of names will be spread out and centered over timelines.
-    timeline names cannot contain spaces.
+    if you move the point over a line with some names and hit C-c C-c
+    to redraw it, the list of names will be spread out and centered
+    over timelines.  timeline names cannot contain spaces.
 
     put the following content in a buffer, enabled uml-mode, and hit
     C-c C-c while the point is on the line.
@@ -97,8 +97,8 @@ person1 person2 person3
       |           |           |
 #+END_SRC
 
-    at any point content can be added to or removed from a diagram
-    and "redraw" run to upadate it.
+    you can modify the diagram at any point and run redraw again to
+    clean it up.
 
 **** arrow to neighbor
 
@@ -106,8 +106,8 @@ person1 person2 person3
     (pipe character below a timeline name).  this will draw an arrow
     to the nearest neighbor in that direction.
 
-    add a dash next to a timeline, as shown below, and redraw with C-c
-    C-c to create an arrow to its neighbor.
+    add a dash next to a timeline, as shown below, and run redraw to
+    create an arrow to its neighbor.
 
 #+BEGIN_SRC
    person1     person2     person3
@@ -145,7 +145,7 @@ person1 person2 person3
 
 **** arrow to the left
 
-    arrows can go to the left also by reversing the angle bracket and dash
+    create arrows that go to the left by reversing the angle bracket and dash.
 
 #+BEGIN_SRC
    person1     person2     person3
@@ -230,7 +230,7 @@ person1 person2 person3
 #+BEGIN_SRC
    person1     person2     person3
       |           |           |
-      | --,       |           |
+      | --.       |           |
       |<--' call  |           |
       |           |           |
 #+END_SRC
