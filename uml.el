@@ -309,6 +309,7 @@
       (let (current col)
         (setq current (find-nearest-timeline timelines (plist-get adjust 'col)))
         (setq col (- current 1))
+        (plist-put adjust 'movetocol col)
         (when (>= col 0)
           (setq timelines (delete (nth col timelines) timelines))
           (dolist (elt messages)
@@ -318,7 +319,23 @@
                   (setq messages (delete elt messages))
                 (if (> from col) (plist-put elt 'from (- from 1)))
                 (if (> to col) (plist-put elt 'to (- to 1)))))))))
-     )
+
+     ((string= "insert" (plist-get adjust 'name))
+      (let (current new rest)
+        (setq current (find-nearest-timeline timelines (plist-get adjust 'col)))
+        (plist-put adjust 'movetocol current)
+        (setq new (list (list 'name       "new"
+                              'origcenter nil)))
+        (if (= current 0)
+            (setq timelines (append new timelines))
+          (setq rest (nthcdr current timelines))
+          (setcdr (nthcdr (- current 1) timelines) new)
+          (setcdr new rest))
+        (dolist (elt messages)
+          (let ((from (plist-get elt 'from))
+                (to   (plist-get elt 'to)))
+            (if (>= from current) (plist-put elt 'from (1+ from)))
+            (if (>= to current) (plist-put elt 'to (1+ to))))))))
 
     ;; space out timelines to fit labels
     (dotimes (ii (length timelines))
