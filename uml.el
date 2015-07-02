@@ -144,19 +144,21 @@
   "spread out timelines so that given label fits"
   (let (leftcol
         rightcol
-        needed
-        delta
-        ii
-        elt)
+        needed)
     (setq leftcol (plist-get (nth left timelines) 'center))
     (setq rightcol (plist-get (nth right timelines) 'center))
     (setq needed (- (+ leftcol  width) rightcol))
-    (when (> needed 0)
-      (setq ii right)
-      (while (< ii (length timelines)) ;; TODO dont need nth
-        (setq elt (nth ii timelines))
-        (plist-put elt 'center (+ (plist-get elt 'center) needed))
-        (setq ii (1+ ii))))))
+    (if (> needed 0)
+      (shift-to-the-right timelines right needed))))
+
+(defun shift-to-the-right (timelines right needed)
+  "shift all timelines greater than or equal to right to the right by needed"
+  (let ((ii right)
+        elt)
+    (while (< ii (length timelines))
+      (setq elt (nth ii timelines))
+      (plist-put elt 'center (+ (plist-get elt 'center) needed))
+      (setq ii (1+ ii)))))
 
 (defun swap-timelines (timelines messages col1 col2)
   "swap two timelines"
@@ -337,9 +339,21 @@
             (if (>= from current) (plist-put elt 'from (1+ from)))
             (if (>= to current) (plist-put elt 'to (1+ to))))))))
 
-    ;; space out timelines to fit labels
+    ;; space out timelines to fit titles and labels
     (dotimes (ii (length timelines))
       (plist-put (nth ii timelines) 'center (+ (* 12 ii) 6 (length prefix))))
+    (let (needed)
+      (dotimes (ii (length timelines))
+        (setq elt (nth ii timelines))
+        (setq needed (max 0 (floor (/ (- (length (plist-get elt 'name)) 8) 2))))
+        (when (> needed 0)
+            (shift-to-the-right timelines
+                                ii
+                                needed)
+            (shift-to-the-right timelines
+                                (1+ ii)
+                                needed))))
+
     (dolist (elt messages)
       (let* ((to    (plist-get elt 'to))
              (from  (plist-get elt 'from))
