@@ -214,12 +214,12 @@
     (goto-char top)
     (setq line (buffer-substring (point) (line-end-position)))
 
-    (if (string-match "^\\(.*?\\)\s*[a-zA-Z0-9]" line)
+    (if (string-match "^\\(.*?\\)\s*[a-zA-Z0-9\-_]" line)
         (setq prefix (match-string 1 line)))
 
     ;; create list of timelines
     (let ((start 0))
-      (while (string-match "\\([a-zA-Z0-9]+\\)" line start)
+      (while (string-match "\\([a-zA-Z0-9\-_]+\\)" line start)
         (setq timelines (append timelines (list (list 'name       (match-string 1 line)
                                                 'origcenter (floor (/ (+ (match-beginning 1) (match-end 1)) 2))))))
         (setq start (match-end 1))))
