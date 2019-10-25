@@ -1,34 +1,35 @@
 ;;; uml.el --- Minor mode for writing ascii uml sequence diagrams
 
-;; Copyright (C) 2015 Ian Martins
+;; Copyright (C) 2015-2019 Ian Martins
 
-;; Version: 0.0.1
-;; Keywords: uml sequence diagram
 ;; Author: Ian Martins <ianxm@jhu.edu>
 ;; URL: http://github.com/ianxm/emacs-uml
+;; Version: 0.0.2
+;; Keywords: uml sequence diagram
 
 ;; This file is not part of GNU Emacs.
 
-;; This program is free software; you can redistribute it and/or modify
+;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
-;; any later version.
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
 
 ;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+;; For a full copy of the GNU General Public License
+;; see <http://www.gnu.org/licenses/>.
 
-;;; Commentary
+;;; Commentary:
 
-;; provides functions that help in writing ascii uml sequence diagrams
+;; provides functions that help in writing ascii uml sequence diagrams.
+
+;;; Code:
 
 (defun uml-forward-timeline ()
-  "move point to the next timeline bar"
+  "Move the point to the next timeline bar."
   (interactive)
   (let ((start (point))
         word)
@@ -42,7 +43,7 @@
       (forward-char))))
 
 (defun uml-back-timeline ()
-  "move point to the previous timeline bar"
+  "Move the point to the previous timeline bar."
   (interactive)
   (let ((start (point))
         word)
@@ -56,39 +57,39 @@
       (forward-char -1))))
 
 (defun uml-swap-left ()
-  "swap the timeline to the left"
+  "Swap the timeline at the point with the timeline to its left."
   (interactive)
-  (redraw-sequence-diagram (list 'name "swap left" 'col (current-column))))
+  (uml--redraw-sequence-diagram (list 'name "swap left" 'col (current-column))))
 
 (defun uml-swap-right ()
-  "swap the timeline to the right"
+  "Swap the timeline at the point with the timeline to its right."
   (interactive)
-  (redraw-sequence-diagram (list 'name "swap right" 'col (current-column))))
+  (uml--redraw-sequence-diagram (list 'name "swap right" 'col (current-column))))
 
 (defun uml-delete-left ()
-  "delete the timeline to the left"
+  "Delete the timeline to the left of the point."
   (interactive)
-  (redraw-sequence-diagram (list 'name "delete" 'col (current-column))))
+  (uml--redraw-sequence-diagram (list 'name "delete" 'col (current-column))))
 
 (defun uml-insert-left ()
-  "insert a timeline to the left"
+  "Insert a timeline to the left of the point."
   (interactive)
-  (redraw-sequence-diagram (list 'name "insert" 'col (current-column))))
+  (uml--redraw-sequence-diagram (list 'name "insert" 'col (current-column))))
 
 (defun uml-sequence-diagram ()
-  "formats a sequence diagram"
+  "Formats a sequence diagram."
   (interactive)
-  (redraw-sequence-diagram nil))
+  (uml--redraw-sequence-diagram nil))
 
-(defun write-text-centered-on (text target)
-  "write given text centered on the given column"
+(defun uml--write-text-centered-on (text target)
+  "Write TEXT centered on the TARGET column."
   (let* ((halfname (floor (/ (length text) 2)))
-         (col (- target halfname))) ;; target-pos-len/2
+         (col (- target halfname))) ; target-pos-len/2
     (move-to-column col t)
     (insert (format "%s" text))))
 
-(defun write-vertical-space (timelines prefix)
-  "write a row of only timelines"
+(defun uml--write-vertical-space (timelines prefix)
+  "Write a row of empty timeline bars for TIMELINES after writing PREFIX."
   (if prefix
       (insert prefix))
   (dolist (elt timelines)
@@ -96,8 +97,8 @@
       (move-to-column col t)
       (insert (format "|")))))
 
-(defun find-nearest-timeline (timelines col)
-  "return the index of the nearest timeline to the given col"
+(defun uml--find-nearest-timeline (timelines col)
+  "Return the index of the nearest of TIMELINES to the column COL."
   (let ((ii 0)
         olddelta
         ret
@@ -110,25 +111,24 @@
       (setq ii (1+ ii)))
     ret))
 
-(defun write-arrow (from to dashed)
-  "write arrow over row"
+(defun uml--write-arrow (from to dashed)
+  "Write an arrow from FROM timeline to TO timeline, possibly with a DASHED line."
   (let ((delta (abs (- to from)))
         (ii 0)
-        on) ;; bool to toggle between dash or space
+        on)                             ; bool to toggle between dash or space
     (move-to-column (1+ (min to from)))
-    (if (> from to) ;; <---
+    (if (> from to)                     ; <---
         (insert ?<))
     (while (< ii (- delta 2))
       (insert (if (or (not dashed) on) ?- ? ))
-      (if on (setq on nil) (setq on t)) ;; toggle dash
+      (if on (setq on nil) (setq on t)) ; toggle dash
       (setq ii (1+ ii)))
-    (if (< from to) ;; --->
+    (if (< from to)                     ; --->
         (insert ?>))
-    (delete-char (- delta 1)))
-  )
+    (delete-char (- delta 1))))
 
-(defun write-self-arrow (col text)
-  "write arrow over row"
+(defun uml--write-self-arrow (col text)
+  "Write an arrow from and to the COL timeline, labeled with TEXT."
   (move-to-column (1+ col))
   (insert " --.")
   (delete-char (min 4 (- (line-end-position) (point))))
@@ -137,11 +137,10 @@
   (if (not text)
       (setq text ""))
   (insert (format "<--' %s" text))
-  (delete-char (min (+ 5 (length text)) (- (line-end-position) (point))))
-)
+  (delete-char (min (+ 5 (length text)) (- (line-end-position) (point)))))
 
-(defun fit-label-between (timelines left right width)
-  "spread out timelines so that given label fits"
+(defun uml--fit-label-between (timelines left right width)
+  "Spread out TIMELINES so that LEFT and RIGHT have WIDTH space between them."
   (let (leftcol
         rightcol
         needed)
@@ -149,10 +148,10 @@
     (setq rightcol (plist-get (nth right timelines) 'center))
     (setq needed (- (+ leftcol  width) rightcol))
     (if (> needed 0)
-      (shift-to-the-right timelines right needed))))
+      (uml--shift-to-the-right timelines right needed))))
 
-(defun shift-to-the-right (timelines right needed)
-  "shift all timelines greater than or equal to right to the right by needed"
+(defun uml--shift-to-the-right (timelines right needed)
+  "Shift all TIMELINES greater than or equal to RIGHT to the right by NEEDED."
   (let ((ii right)
         elt)
     (while (< ii (length timelines))
@@ -160,8 +159,8 @@
       (plist-put elt 'center (+ (plist-get elt 'center) needed))
       (setq ii (1+ ii)))))
 
-(defun swap-timelines (timelines messages col1 col2)
-  "swap two timelines"
+(defun uml--swap-timelines (timelines messages col1 col2)
+  "Given all TIMELINES and MESSAGES, swap COL1 and COL2."
   (let (tmp)
     (setq tmp (nth col1 timelines))
     (setcar (nthcdr col1 timelines) (nth col2 timelines))
@@ -172,18 +171,15 @@
     (if (= (plist-get elt 'to) col1) (plist-put elt 'to col2)
       (if (= (plist-get elt 'to) col2) (plist-put elt 'to col1)))))
 
-(defun delete-timeline (timelines messages col)
-  "delete the given timeline"
-)
-
-(defun redraw-sequence-diagram (adjust)
-  "redraws a sequence diagram"
-  (let (top         ;; first line in buffer of diagram
-        bottom      ;; last line in buffer of diagram
-        line        ;; current line content
-        prefix      ;; comment character or nil
-        timelines   ;; list of timeline data
-        messages)   ;; list of arrow data
+(defun uml--redraw-sequence-diagram (adjust)
+  "Redraws a sequence diagram after applying ADJUST."
+  (let (top         ; first line in buffer of diagram
+        bottom      ; last line in buffer of diagram
+        line        ; current line content
+        prefix      ; comment character or nil
+        timelines   ; list of timeline data
+        messages    ; list of arrow data
+        elt)
     (beginning-of-line)
 
     ;; find the top of the diagram
@@ -248,68 +244,67 @@
 
         (setq found nil)
         (cond
-         ((string-match "\-.*>" line) ;; ->
-          (setq from (find-nearest-timeline timelines (match-beginning 0)))
-          (setq to (find-nearest-timeline timelines (match-end 0)))
+         ((string-match "\-.*>" line) ; ->
+          (setq from (uml--find-nearest-timeline timelines (match-beginning 0)))
+          (setq to (uml--find-nearest-timeline timelines (match-end 0)))
           (setq found t))
 
-         ((string-match "<.*\-" line) ;; <-
-          (setq from (find-nearest-timeline timelines (match-end 0)))
-          (setq to (find-nearest-timeline timelines (match-beginning 0)))
+         ((string-match "<.*\-" line) ; <-
+          (setq from (uml--find-nearest-timeline timelines (match-end 0)))
+          (setq to (uml--find-nearest-timeline timelines (match-beginning 0)))
           (setq found t))
 
-         ((string-match "<" line) ;; <
-          (setq from (find-nearest-timeline timelines (match-end 0)))
-          (setq to (find-nearest-timeline timelines (match-beginning 0)))
+         ((string-match "<" line)     ; <
+          (setq from (uml--find-nearest-timeline timelines (match-end 0)))
+          (setq to (uml--find-nearest-timeline timelines (match-beginning 0)))
           (setq found t))
 
-         ((string-match "|\-" line) ;; |-
-          (setq from (find-nearest-timeline timelines (match-beginning 0)))
+         ((string-match "|\-" line)   ; |-
+          (setq from (uml--find-nearest-timeline timelines (match-beginning 0)))
           (setq to (1+ from))
           (if (< to (length timelines))
               (setq found t)
             (message "ignoring out of bounds message")))
 
-         ((string-match "\-|" line) ;; -|
-          (setq from (find-nearest-timeline timelines (match-beginning 0)))
+         ((string-match "\-|" line)   ; -|
+          (setq from (uml--find-nearest-timeline timelines (match-beginning 0)))
           (setq to (- from 1))
           (if (>= to 0)
               (setq found t)
             (message "ignoring out of bounds message"))))
-      
+
         (when found
           (setq messages (append messages (list (list 'label  label
                                                       'from   from
                                                       'to     to
                                                       'dashed dashed))))
-          (setq label nil))
-        ))
+          (setq label nil))))
     (goto-char top)
     (delete-char (- bottom top))
 
     ;; make adjustments
-    (cond 
+    (cond
      ((string= "swap left" (plist-get adjust 'name))
       (let (current swapwith)
-        (setq current (find-nearest-timeline timelines (plist-get adjust 'col)))
+        (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
         (setq swapwith (- current 1))
         (if (or (< swapwith 0) (>= swapwith (length timelines)))
             (plist-put adjust 'movetocol current)
           (plist-put adjust 'movetocol swapwith)
-          (swap-timelines timelines messages current swapwith))))
+          (uml--swap-timelines timelines messages current swapwith))))
 
      ((string= "swap right" (plist-get adjust 'name))
       (let (current swapwith)
-        (setq current (find-nearest-timeline timelines (plist-get adjust 'col)))
+        (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
         (setq swapwith (1+ current))
         (if (or (< swapwith 0) (>= swapwith (length timelines)))
             (plist-put adjust 'movetocol current)
           (plist-put adjust 'movetocol swapwith)
-          (swap-timelines timelines messages current swapwith))))
+          (uml--swap-timelines timelines messages current swapwith))))
 
      ((string= "delete" (plist-get adjust 'name))
       (let (current col)
-        (setq current (find-nearest-timeline timelines (plist-get adjust 'col)))
+        (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
         (setq col (- current 1))
         (plist-put adjust 'movetocol col)
         (when (>= col 0)
@@ -324,7 +319,7 @@
 
      ((string= "insert" (plist-get adjust 'name))
       (let (current new rest)
-        (setq current (find-nearest-timeline timelines (plist-get adjust 'col)))
+        (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
         (plist-put adjust 'movetocol current)
         (setq new (list (list 'name       "new"
                               'origcenter nil)))
@@ -347,10 +342,10 @@
         (setq elt (nth ii timelines))
         (setq needed (max 0 (floor (/ (- (length (plist-get elt 'name)) 8) 2))))
         (when (> needed 0)
-            (shift-to-the-right timelines
+            (uml--shift-to-the-right timelines
                                 ii
                                 needed)
-            (shift-to-the-right timelines
+            (uml--shift-to-the-right timelines
                                 (1+ ii)
                                 needed))))
 
@@ -361,26 +356,26 @@
              (right (max to from)))
         (if (= left right)
             (if (< (1+ left) (length timelines))
-                (fit-label-between timelines ;; self arrow
-                                   left
-                                   (1+ left)
-                                   (+ (length (plist-get elt 'label)) 8)))
-          (fit-label-between timelines
-                             left
-                             right
-                             (+ (length (plist-get elt 'label)) 4)))))
+                (uml--fit-label-between timelines ; self arrow
+                                        left
+                                        (1+ left)
+                                        (+ (length (plist-get elt 'label)) 8)))
+          (uml--fit-label-between timelines
+                                  left
+                                  right
+                                  (+ (length (plist-get elt 'label)) 4)))))
 
-    ;; write timeline names
+    ;; write prefix and timeline names
     (if prefix
         (insert prefix))
     (dolist (elt timelines)
-      (write-text-centered-on (plist-get elt 'name)
+      (uml--write-text-centered-on (plist-get elt 'name)
                               (plist-get elt 'center)))
     (newline)
 
     ;; write messages
     (dolist (elt messages)
-      (write-vertical-space timelines prefix)
+      (uml--write-vertical-space timelines prefix)
       (newline)
 
       (let* ((text       (plist-get elt 'label))
@@ -394,35 +389,36 @@
 
         ;; write label
         (when (and text (not selfmessage))
-          (write-vertical-space timelines prefix)
+          (uml--write-vertical-space timelines prefix)
           (newline)
           (forward-line -1)
           (setq center (floor (/ (+ fromcenter tocenter) 2)))
-          (write-text-centered-on text center)
+          (uml--write-text-centered-on text center)
           (delete-char (length text))
           (forward-line))
 
         ;; write arrow
         (if selfmessage
             (progn
-              (write-vertical-space timelines prefix)
+              (uml--write-vertical-space timelines prefix)
               (newline)
-              (write-vertical-space timelines prefix)
+              (uml--write-vertical-space timelines prefix)
               (newline)
               (forward-line -2)
-              (write-self-arrow fromcenter text)
+              (uml--write-self-arrow fromcenter text)
               (forward-line))
-          (write-vertical-space timelines prefix)
+          (uml--write-vertical-space timelines prefix)
           (newline)
           (forward-line -1)
-          (write-arrow fromcenter tocenter (plist-get elt 'dashed))
+          (uml--write-arrow fromcenter tocenter (plist-get elt 'dashed))
           (forward-line))))
 
-    (write-vertical-space timelines prefix)
+    (uml--write-vertical-space timelines prefix)
     (goto-char top)
     (when (plist-get adjust 'movetocol)
         (move-to-column (plist-get (nth (plist-get adjust 'movetocol) timelines) 'center)))))
 
+;;;###autoload
 (define-minor-mode uml-mode
   "Toggle uml mode.
 Interactively with no argument, this command toggles the mode.
@@ -450,4 +446,4 @@ See the command \\[uml-seqence-diagram]."
 
 (provide 'uml)
 
-
+;;; uml.el ends here

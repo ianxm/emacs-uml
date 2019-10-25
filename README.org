@@ -8,22 +8,12 @@
   sequence diagrams in emacs.  it's goal is to do for sequence
   diagrams what orgtbl-mode does for tables.
 
+  ascii uml diagrams are quick and easy to make and can be emailed
+  without attachment or embedded in code comments.
+
 * example
-  
-uml.el will convert this:
 
-#+BEGIN_SRC
-   person1     person2     kitchen
-      |- make me a sandwich
-       no way   - -|
-      |--sudo make me a sandwich
-                |-go     >
-                              < make it
-                 <          - -|
-       <sandwich - -|
-#+END_SRC
-
-into this:
+uml.el can be used to make ascii uml sequence diagrams like this:
 
 #+BEGIN_SRC
    person1                    person2     kitchen
@@ -298,4 +288,5 @@ person1 person2 person3
   - multi-line timeline titles
   - separators
   - class diagrams
-
+  - swap arrow up or down
+  - move cursor up or down by an arrow
