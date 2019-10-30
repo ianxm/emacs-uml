@@ -5,7 +5,7 @@
   language for creating diagrams of software design.
 
   uml.el is a minor mode for emacs that makes it easier to build ascii
-  sequence diagrams in emacs.  it's goal is to do for sequence
+  sequence diagrams in emacs.  my goal is for it to do for sequence
   diagrams what orgtbl-mode does for tables.
 
   ascii uml diagrams are quick and easy to make and can be emailed
@@ -284,7 +284,6 @@ person1 person2 person3
 #+END_SRC
 
 * todo
-
   - multi-line timeline titles
   - separators
   - class diagrams

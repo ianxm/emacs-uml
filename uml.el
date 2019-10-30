@@ -1,11 +1,12 @@
-;;; uml.el --- Minor mode for writing ascii uml sequence diagrams
+;;; uml.el --- Minor mode for ascii uml sequence diagrams -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2015-2019 Ian Martins
 
 ;; Author: Ian Martins <ianxm@jhu.edu>
 ;; URL: http://github.com/ianxm/emacs-uml
 ;; Version: 0.0.2
-;; Keywords: uml sequence diagram
+;; Keywords: docs
+;; Package-Requires: ((emacs "24.4"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -27,6 +28,8 @@
 ;; provides functions that help in writing ascii uml sequence diagrams.
 
 ;;; Code:
+
+(require 'subr-x)
 
 (defun uml-forward-timeline ()
   "Move the point to the next timeline bar."
@@ -171,173 +174,176 @@
     (if (= (plist-get elt 'to) col1) (plist-put elt 'to col2)
       (if (= (plist-get elt 'to) col2) (plist-put elt 'to col1)))))
 
-(defun uml--redraw-sequence-diagram (adjust)
-  "Redraws a sequence diagram after applying ADJUST."
-  (let (top         ; first line in buffer of diagram
-        bottom      ; last line in buffer of diagram
-        line        ; current line content
-        prefix      ; comment character or nil
-        timelines   ; list of timeline data
-        messages    ; list of arrow data
-        elt)
-    (beginning-of-line)
-
-    ;; find the top of the diagram
-    (setq line (buffer-substring (point) (line-end-position)))
+(defun uml--find-top-or-bottom (direction)
+  "Return the position at the top or bottom of the diagram depending on DIRECTION ('top or 'bottom)."
+  (let ((end-of-buffer (if (eq direction 'top) (point-min) (point-max)))
+        (step (if (eq direction 'top) -1 1)))
     (while (and
-            (not (string-match "^[\s+/;#\*]*$" line))
-            (not (= (point) (point-min))))
-      (forward-line -1)
-      (setq line (buffer-substring (point) (line-end-position))))
-    (when (string-match "^[\s+/;#\*]*$" line)
-      (forward-line))
-    (setq top (point))
+            (not (= (point) end-of-buffer))
+            (not (re-search-forward "^[\s+/;#\*]*$" (line-end-position) t)))
+      (forward-line step))
+    (cond
+     ((eq direction 'top)
+      (if (re-search-forward "^[\s+/;#\*]*$" (line-end-position) t)
+          (forward-line))
+      (point))
+     ((eq direction 'bottom)
+      (if (not (= (point) (point-max)))
+          (forward-line -1))
+      (line-end-position)))))
 
-    ;; find the bottom of the diagram
-    (setq line (buffer-substring (point) (line-end-position)))
-    (while (and
-            (not (string-match "^[\s+/;#\*]*$" line))
-            (not (= (point) (point-max))))
-      (forward-line)
-      (setq line (buffer-substring (point) (line-end-position))))
-    (if (not (= (point) (point-max)))
-        (forward-line -1))
-    (setq bottom (line-end-position))
-    ;; (message "top: %d bottom: %d" top bottom)
-    ;; (message "top: %d bottom: %d" (count-lines (point-min) top) (count-lines (point-min) bottom))
+(defun uml--calc-middle (start end)
+  "This just computes the integer mean of START and END."
+  (floor (/ (+ start end) 2)))
 
-    ;; get timeline data
-    ;; build array of plists like this:
-    ;; [ (name "person1" origcenter 5 center 6) (name "person2" origcenter 12 center 18) ... ]
-    (goto-char top)
-    (setq line (buffer-substring (point) (line-end-position)))
+(defun uml--determine-prefix ()
+  "Determine the prefix (if there is one)."
+    (if (looking-at "^[^ ]+")
+        (match-string 0)
+      nil))
 
-    (if (string-match "^\\(.*?\\)\s*[a-zA-Z0-9\-_]" line)
-        (setq prefix (match-string 1 line)))
+(defun uml--parse-timelines (prefix)
+  "Parse the timeline names.
+Look at the current line after the PREFIX and for each timeline,
+determine the name and center column.  The return structure looks
+like:
+[ (name \"timeline1\" origcenter 5) (name \"timeline2\" origcenter 12) ... ]"
+  (let (timelines)
+    (forward-char (length prefix))
+    (while (looking-at "\s*\\([a-zA-Z0-9\-_]+\\)")
+      (setq timelines (append timelines (list (list 'name (match-string 1)
+                                                    'origcenter (uml--calc-middle (- (match-beginning 1) (line-beginning-position))
+                                                                                  (- (match-end 1) (line-beginning-position)))))))
+      (goto-char (match-end 1)))
+    timelines))
 
-    ;; create list of timelines
-    (let ((start 0))
-      (while (string-match "\\([a-zA-Z0-9\-_]+\\)" line start)
-        (setq timelines (append timelines (list (list 'name       (match-string 1 line)
-                                                'origcenter (floor (/ (+ (match-beginning 1) (match-end 1)) 2))))))
-        (setq start (match-end 1))))
-
-    ;; messages is a mixed list of plists of arrows and separators
-    ;; arrows look like
-    ;;   (from 0 to 2 label "doIt()" dashed f)
-    ;; separators look like
-    ;;   (text "title for next part")
-
-    (let (label
-          dashed
-          from
-          to
-          found)
-      (while (< (point) bottom)
+(defun uml--parse-messages (timelines prefix bottom)
+  "Parse the messages from the diagram.
+Parse messages from the diagram given the TIMELINES and PREFIX
+until we reach the BOTTOM.  Messages is a mixed list of plists of
+arrows and separators.  Arrows look like:
+    (from 0 to 2 label \"doIt()\" dashed f)
+Separators look like:
+    (text \"title for next part\")"
+    (let (messages label dashed found)
+      (while (< (line-end-position)
+                (- bottom (length prefix)))
         (forward-line 1)
-        (setq line (buffer-substring (point) (line-end-position)))
-        ;; (message "checking %s" line)
-        (setq dashed (string-match "\- \-" line))
+        (forward-char (length prefix))
 
-        (if (string-match "\\([a-zA-Z0-9][a-zA-Z0-9\(\) ]*?[a-zA-Z0-9\(\)]?\\)[ |>\-]*$" line)
-            (setq label (match-string 1 line)))
+        ;; the label may be above the message or on the same line
+        (when (re-search-forward "[a-zA-Z0-9][a-zA-Z0-9\(\) ]*" (line-end-position) t)
+          (setq label (string-trim-right (match-string 0)))
+          (beginning-of-line))
 
-        (setq found nil)
-        (cond
-         ((string-match "\-.*>" line) ; ->
-          (setq from (uml--find-nearest-timeline timelines (match-beginning 0)))
-          (setq to (uml--find-nearest-timeline timelines (match-end 0)))
-          (setq found t))
-
-         ((string-match "<.*\-" line) ; <-
-          (setq from (uml--find-nearest-timeline timelines (match-end 0)))
-          (setq to (uml--find-nearest-timeline timelines (match-beginning 0)))
-          (setq found t))
-
-         ((string-match "<" line)     ; <
-          (setq from (uml--find-nearest-timeline timelines (match-end 0)))
-          (setq to (uml--find-nearest-timeline timelines (match-beginning 0)))
-          (setq found t))
-
-         ((string-match "|\-" line)   ; |-
-          (setq from (uml--find-nearest-timeline timelines (match-beginning 0)))
-          (setq to (1+ from))
-          (if (< to (length timelines))
-              (setq found t)
-            (message "ignoring out of bounds message")))
-
-         ((string-match "\-|" line)   ; -|
-          (setq from (uml--find-nearest-timeline timelines (match-beginning 0)))
-          (setq to (- from 1))
-          (if (>= to 0)
-              (setq found t)
-            (message "ignoring out of bounds message"))))
+        ;; FOUND is (from . to) where FROM and TO are timeline indices
+        (setq found (uml--find-message-bounds-maybe timelines))
 
         (when found
+          (beginning-of-line)
+          (setq dashed (re-search-forward "\- \-" (line-end-position) t))
           (setq messages (append messages (list (list 'label  label
-                                                      'from   from
-                                                      'to     to
+                                                      'from   (car found)
+                                                      'to     (cdr found)
                                                       'dashed dashed))))
-          (setq label nil))))
-    (goto-char top)
-    (delete-char (- bottom top))
+          (setq label nil)))
+      messages))
 
-    ;; make adjustments
+(defun uml--find-message-bounds-maybe (timelines)
+  "Find which timelines a message connects.
+Return the indices in TIMELINES between which the message passes
+as (from . to), else nil if there is no message on the current
+line"
+  (let (from to found)
     (cond
-     ((string= "swap left" (plist-get adjust 'name))
-      (let (current swapwith)
-        (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
-        (setq swapwith (- current 1))
-        (if (or (< swapwith 0) (>= swapwith (length timelines)))
-            (plist-put adjust 'movetocol current)
-          (plist-put adjust 'movetocol swapwith)
-          (uml--swap-timelines timelines messages current swapwith))))
+     ((re-search-forward "\-.*>" (line-end-position) t) ; ->
+      (setq from (uml--find-nearest-timeline timelines (- (match-beginning 0) (line-beginning-position))))
+      (setq to (uml--find-nearest-timeline timelines (- (match-end 0) (line-beginning-position))))
+      (setq found t))
 
-     ((string= "swap right" (plist-get adjust 'name))
-      (let (current swapwith)
-        (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
-        (setq swapwith (1+ current))
-        (if (or (< swapwith 0) (>= swapwith (length timelines)))
-            (plist-put adjust 'movetocol current)
-          (plist-put adjust 'movetocol swapwith)
-          (uml--swap-timelines timelines messages current swapwith))))
+     ((re-search-forward "<.*\-" (line-end-position) t) ; <-
+      (setq from (uml--find-nearest-timeline timelines (- (match-end 0) (line-beginning-position))))
+      (setq to (uml--find-nearest-timeline timelines (- (match-beginning 0) (line-beginning-position))))
+      (setq found t))
 
-     ((string= "delete" (plist-get adjust 'name))
-      (let (current col)
-        (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
-        (setq col (- current 1))
-        (plist-put adjust 'movetocol col)
-        (when (>= col 0)
-          (setq timelines (delete (nth col timelines) timelines))
-          (dolist (elt messages)
-            (let ((from (plist-get elt 'from))
-                  (to   (plist-get elt 'to)))
-              (if (or (= from col) (= to col))
-                  (setq messages (delete elt messages))
-                (if (> from col) (plist-put elt 'from (- from 1)))
-                (if (> to col) (plist-put elt 'to (- to 1)))))))))
+     ((re-search-forward "<" (line-end-position) t)     ; <
+      (setq from (uml--find-nearest-timeline timelines (- (match-end 0) (line-beginning-position))))
+      (setq to (uml--find-nearest-timeline timelines (- (match-beginning 0) (line-beginning-position))))
+      (setq found t))
 
-     ((string= "insert" (plist-get adjust 'name))
-      (let (current new rest)
-        (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
-        (plist-put adjust 'movetocol current)
-        (setq new (list (list 'name       "new"
-                              'origcenter nil)))
-        (if (= current 0)
-            (setq timelines (append new timelines))
-          (setq rest (nthcdr current timelines))
-          (setcdr (nthcdr (- current 1) timelines) new)
-          (setcdr new rest))
+     ((re-search-forward "|\-" (line-end-position) t)   ; |-
+      (setq from (uml--find-nearest-timeline timelines (- (match-beginning 0) (line-beginning-position))))
+      (setq to (1+ from))
+      (if (< to (length timelines))
+          (setq found t)
+        (message "Ignoring out of bounds message.")))
+
+     ((re-search-forward "\-|" (line-end-position) t)   ; -|
+      (setq from (uml--find-nearest-timeline timelines (- (match-beginning 0) (line-beginning-position))))
+      (setq to (- from 1))
+      (if (>= to 0)
+          (setq found t)
+        (message "Ignoring out of bounds message."))))
+    (if found (cons from to) nil)))
+
+(defun uml--apply-adjustments (adjust timelines messages)
+  "Apply ADJUST to TIMELINES and MESSAGES."
+  (cond
+   ((string= "swap left" (plist-get adjust 'name))
+    (let (current swapwith)
+      (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
+      (setq swapwith (- current 1))
+      (if (or (< swapwith 0) (>= swapwith (length timelines)))
+          (plist-put adjust 'movetocol current)
+        (plist-put adjust 'movetocol swapwith)
+        (uml--swap-timelines timelines messages current swapwith))))
+
+   ((string= "swap right" (plist-get adjust 'name))
+    (let (current swapwith)
+      (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
+      (setq swapwith (1+ current))
+      (if (or (< swapwith 0) (>= swapwith (length timelines)))
+          (plist-put adjust 'movetocol current)
+        (plist-put adjust 'movetocol swapwith)
+        (uml--swap-timelines timelines messages current swapwith))))
+
+   ((string= "delete" (plist-get adjust 'name))
+    (let (current col)
+      (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
+      (setq col (- current 1))
+      (plist-put adjust 'movetocol col)
+      (when (>= col 0)
+        (setq timelines (delete (nth col timelines) timelines))
         (dolist (elt messages)
           (let ((from (plist-get elt 'from))
                 (to   (plist-get elt 'to)))
-            (if (>= from current) (plist-put elt 'from (1+ from)))
-            (if (>= to current) (plist-put elt 'to (1+ to))))))))
+            (if (or (= from col) (= to col))
+                (setq messages (delete elt messages))
+              (if (> from col) (plist-put elt 'from (- from 1)))
+              (if (> to col) (plist-put elt 'to (- to 1)))))))))
 
-    ;; space out timelines to fit titles and labels
+   ((string= "insert" (plist-get adjust 'name))
+    (let (current new rest)
+      (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
+      (plist-put adjust 'movetocol current)
+      (setq new (list (list 'name "new"
+                            'origcenter nil)))
+      (if (= current 0)
+          (setq timelines (append new timelines))
+        (setq rest (nthcdr current timelines))
+        (setcdr (nthcdr (- current 1) timelines) new)
+        (setcdr new rest))
+      (dolist (elt messages)
+        (let ((from (plist-get elt 'from))
+              (to   (plist-get elt 'to)))
+          (if (>= from current) (plist-put elt 'from (1+ from)))
+          (if (>= to current) (plist-put elt 'to (1+ to)))))))))
+
+(defun uml--space-out-timelines (timelines messages prefix)
+  "Space out TIMELINES to fit MESSAGES' labels and PREFIX."
     (dotimes (ii (length timelines))
       (plist-put (nth ii timelines) 'center (+ (* 12 ii) 6 (length prefix))))
-    (let (needed)
+    (let (elt needed)
       (dotimes (ii (length timelines))
         (setq elt (nth ii timelines))
         (setq needed (max 0 (floor (/ (- (length (plist-get elt 'name)) 8) 2))))
@@ -363,7 +369,10 @@
           (uml--fit-label-between timelines
                                   left
                                   right
-                                  (+ (length (plist-get elt 'label)) 4)))))
+                                  (+ (length (plist-get elt 'label)) 4))))))
+
+(defun uml--write-diagram (timelines messages prefix)
+  "Write the TIMELINES and MESSAGES using PREFIX to the buffer."
 
     ;; write prefix and timeline names
     (if prefix
@@ -413,7 +422,46 @@
           (uml--write-arrow fromcenter tocenter (plist-get elt 'dashed))
           (forward-line))))
 
-    (uml--write-vertical-space timelines prefix)
+    (uml--write-vertical-space timelines prefix))
+
+(defun uml--redraw-sequence-diagram (adjust)
+  "Redraws a sequence diagram after applying ADJUST.  This is the main routine."
+  (let (top         ; first line in buffer of diagram
+        bottom      ; last line in buffer of diagram
+        prefix      ; comment character or nil
+        timelines   ; list of timeline data
+        messages)   ; list of arrow data
+
+    (beginning-of-line)
+
+    ;; find the top and bottom of the diagram
+    (setq top (uml--find-top-or-bottom 'top))
+    (setq bottom (uml--find-top-or-bottom 'bottom))
+    ;; (message "top: %d bottom: %d" top bottom)
+
+    (goto-char top)
+    (setq prefix (uml--determine-prefix))
+
+    ;; parse timeline headers from old diagram
+    (setq timelines (uml--parse-timelines prefix))
+
+    ;; parse messages from old diagram
+    (setq messages (uml--parse-messages timelines prefix bottom))
+
+    ;; clear the old diagram content from the buffer
+    (goto-char top)
+    (delete-char (- bottom top))
+
+    ;; apply adjustments such as shifts or swaps
+    (uml--apply-adjustments adjust timelines messages)
+
+    ;; calculate timeline center columns
+    (uml--space-out-timelines timelines messages prefix)
+
+    ;; render the diagram into the buffer
+    (uml--write-diagram timelines messages prefix)
+
+    ;; move the cursor back to the column where it was before we did anything
     (goto-char top)
     (when (plist-get adjust 'movetocol)
         (move-to-column (plist-get (nth (plist-get adjust 'movetocol) timelines) 'center)))))
