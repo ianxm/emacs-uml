@@ -62,22 +62,22 @@
 (defun uml-swap-left ()
   "Swap the timeline at the point with the timeline to its left."
   (interactive)
-  (uml--redraw-sequence-diagram (list 'name "swap left" 'col (current-column))))
+  (uml--redraw-sequence-diagram (list 'name :swapleft 'col (current-column))))
 
 (defun uml-swap-right ()
   "Swap the timeline at the point with the timeline to its right."
   (interactive)
-  (uml--redraw-sequence-diagram (list 'name "swap right" 'col (current-column))))
+  (uml--redraw-sequence-diagram (list 'name :swapright 'col (current-column))))
 
-(defun uml-delete-left ()
-  "Delete the timeline to the left of the point."
+(defun uml-delete-timeline ()
+  "Delete the timeline at point."
   (interactive)
-  (uml--redraw-sequence-diagram (list 'name "delete" 'col (current-column))))
+  (uml--redraw-sequence-diagram (list 'name :delete 'col (current-column))))
 
-(defun uml-insert-left ()
-  "Insert a timeline to the left of the point."
+(defun uml-insert-timeline ()
+  "Insert a timeline to the right of the point."
   (interactive)
-  (uml--redraw-sequence-diagram (list 'name "insert" 'col (current-column))))
+  (uml--redraw-sequence-diagram (list 'name :insert 'col (current-column))))
 
 (defun uml-sequence-diagram ()
   "Formats a sequence diagram."
@@ -287,9 +287,10 @@ line"
     (if found (cons from to) nil)))
 
 (defun uml--apply-adjustments (adjust timelines messages)
-  "Apply ADJUST to TIMELINES and MESSAGES."
+  "Apply ADJUST to TIMELINES and MESSAGES.
+Return TIMELINES since we might have changed its head."
   (cond
-   ((string= "swap left" (plist-get adjust 'name))
+   ((eq :swapleft (plist-get adjust 'name))
     (let (current swapwith)
       (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
       (setq swapwith (- current 1))
@@ -298,7 +299,7 @@ line"
         (plist-put adjust 'movetocol swapwith)
         (uml--swap-timelines timelines messages current swapwith))))
 
-   ((string= "swap right" (plist-get adjust 'name))
+   ((eq :swapright (plist-get adjust 'name))
     (let (current swapwith)
       (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
       (setq swapwith (1+ current))
@@ -307,11 +308,11 @@ line"
         (plist-put adjust 'movetocol swapwith)
         (uml--swap-timelines timelines messages current swapwith))))
 
-   ((string= "delete" (plist-get adjust 'name))
+   ((eq :delete (plist-get adjust 'name))
     (let (current col)
       (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
-      (setq col (- current 1))
-      (plist-put adjust 'movetocol col)
+      (setq col current)
+      (plist-put adjust 'movetocol (max 0 (1- col)))
       (when (>= col 0)
         (setq timelines (delete (nth col timelines) timelines))
         (dolist (elt messages)
@@ -322,22 +323,22 @@ line"
               (if (> from col) (plist-put elt 'from (- from 1)))
               (if (> to col) (plist-put elt 'to (- to 1)))))))))
 
-   ((string= "insert" (plist-get adjust 'name))
+   ((eq :insert (plist-get adjust 'name))
     (let (current new rest)
       (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
       (plist-put adjust 'movetocol current)
+      (setq current (1+ current))
       (setq new (list (list 'name "new"
                             'origcenter nil)))
-      (if (= current 0)
-          (setq timelines (append new timelines))
-        (setq rest (nthcdr current timelines))
-        (setcdr (nthcdr (- current 1) timelines) new)
-        (setcdr new rest))
+      (setq rest (nthcdr current timelines))
+      (setcdr (nthcdr (- current 1) timelines) new)
+      (setcdr new rest)
       (dolist (elt messages)
         (let ((from (plist-get elt 'from))
               (to   (plist-get elt 'to)))
           (if (>= from current) (plist-put elt 'from (1+ from)))
-          (if (>= to current) (plist-put elt 'to (1+ to)))))))))
+          (if (>= to current) (plist-put elt 'to (1+ to))))))))
+  timelines)
 
 (defun uml--space-out-timelines (timelines messages prefix)
   "Space out TIMELINES to fit MESSAGES' labels and PREFIX."
@@ -453,7 +454,7 @@ line"
     (delete-char (- bottom top))
 
     ;; apply adjustments such as shifts or swaps
-    (uml--apply-adjustments adjust timelines messages)
+    (setq timelines (uml--apply-adjustments adjust timelines messages))
 
     ;; calculate timeline center columns
     (uml--space-out-timelines timelines messages prefix)
@@ -486,8 +487,8 @@ See the command \\[uml-seqence-diagram]."
  `((,(kbd "C-c C-c") . uml-sequence-diagram)
    (,(kbd "<M-left>") . uml-swap-left)
    (,(kbd "<M-right>") . uml-swap-right)
-   (,(kbd "<M-S-left>") . uml-delete-left)
-   (,(kbd "<M-S-right>") . uml-insert-left)
+   (,(kbd "<M-S-left>") . uml-delete-timeline)
+   (,(kbd "<M-S-right>") . uml-insert-timeline)
    (,(kbd "M-f") . uml-forward-timeline)
    (,(kbd "M-b") . uml-back-timeline))
  :group 'uml)

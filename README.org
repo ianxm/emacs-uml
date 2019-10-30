@@ -64,8 +64,8 @@ uml.el can be used to make ascii uml sequence diagrams like this:
      - M-b :: move backward to the previous word or timeline
      - M-left :: shift a timeline to the left
      - M-right :: shift a timeline to the right
-     - M-S-left :: delete the timeline to the left
-     - M-S-right :: insert a timeline to the left
+     - M-S-left :: delete the timeline at the point
+     - M-S-right :: insert a timeline to the right
 
 * tutorial
 
