@@ -79,13 +79,13 @@ uml.el can be used to make ascii uml sequence diagrams like this:
     C-c C-c while the point is on the line.
 
 #+BEGIN_SRC
-person1 person2 person3
+timeline1 timeline2 timeline3
 #+END_SRC
 
     the above line will be replaced with:
 
 #+BEGIN_SRC
-   person1     person2     person3
+  timeline1   timeline2   timeline3
       |           |           |
 #+END_SRC
 
@@ -102,14 +102,14 @@ person1 person2 person3
     create an arrow to its neighbor.
 
 #+BEGIN_SRC
-   person1     person2     person3
+  timeline1   timeline2   timeline3
       |-           |           |
 #+END_SRC
 
   becomes
 
 #+BEGIN_SRC
-   person1     person2     person3
+  timeline1   timeline2   timeline3
       |           |           |
       |---------->|           |
       |           |           |
@@ -122,14 +122,14 @@ person1 person2 person3
     which timelines to connect.  there can only be one arrow per line.
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       |-           |          >|
 #+END_SRC
 
   becomes
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       |           |           |
       |---------------------->|
       |           |           |
@@ -140,14 +140,14 @@ person1 person2 person3
     create arrows that go to the left by reversing the angle bracket and dash.
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       |<           |          -|
 #+END_SRC
 
   becomes
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       |           |           |
       |<----------------------|
       |           |           |
@@ -159,21 +159,21 @@ person1 person2 person3
     at any point in the line.
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       |- -          |          >|
 #+END_SRC
 
   or
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       |- ---------------------->|
 #+END_SRC
 
   becomes
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       |           |           |
       | - - - - - - - - - - ->|
       |           |           |
@@ -185,7 +185,7 @@ person1 person2 person3
     arrow.  there can only be one label per line.
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       | call          |          |
       |-           |          |
 #+END_SRC
@@ -193,14 +193,14 @@ person1 person2 person3
   or
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       |- call        |          |
 #+END_SRC
 
   becomes
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       |           |           |
       |   call    |           |
       |---------->|           |
@@ -213,14 +213,14 @@ person1 person2 person3
     under the same timeline.
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       |< call         |          |
 #+END_SRC
 
   becomes
 
 #+BEGIN_SRC
-   person1     person2     person3
+   timeline1     timeline2     timeline3
       |           |           |
       | --.       |           |
       |<--' call  |           |
@@ -229,63 +229,66 @@ person1 person2 person3
 
 **** comments
 
-    diagrams can be embedded in source code comments
+     diagrams can be embedded in source code comments
 
 #+BEGIN_SRC
 #
-# person1 person2
+# timeline1 timeline2
 #    |-
 
 ;;
-;; person1 person2
+;; timeline1 timeline2
 ;;   |-
 ;;
 
-/*
- * person1 person2
- *   |-
- */
-
 //
-// person1 person2
+// timeline1 timeline2
 //   |-
 //
+
+/*
+ * timeline1 timeline2
+ *   |-
+ */
 #+END_SRC
 
-  becomes
+becomes
 
 #+BEGIN_SRC
-#
-#   person1     person2
+
+#  timeline1   timeline2
 #      |           |
 #      |---------->|
 #      |           |
 
-;;
-;;   person1     person2
+;;   timeline1     timeline2
 ;;      |           |
 ;;      |---------->|
 ;;      |           |
 ;;
 
-/*
- *   person1     person2
- *      |           |
- *      |---------->|
- *      |           |
- */
-
-//
-//   person1     person2
+//  timeline1   timeline2
 //      |           |
 //      |---------->|
 //      |           |
 //
+
+/*
+ *  timeline1   timeline2
+ *      |           |
+ *      |---------->|
+ *      |           |
+ */
 #+END_SRC
+
+uml.el needs an empty line above the start of the diagram, so for the
+last example (c-style comments) you have to open a line above the line
+with the timelines before refreshing the diagram.
 
 * todo
   - multi-line timeline titles
+  - multi-line message labels
   - separators
-  - class diagrams
   - swap arrow up or down
   - move cursor up or down by an arrow
+  - class diagrams

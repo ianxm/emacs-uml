@@ -198,9 +198,9 @@
 
 (defun uml--determine-prefix ()
   "Determine the prefix (if there is one)."
-    (if (looking-at "^[^ ]+")
-        (match-string 0)
-      nil))
+  (if (looking-at "^ ?[^\\w ]+")
+      (match-string 0)
+    nil))
 
 (defun uml--parse-timelines (prefix)
   "Parse the timeline names.
@@ -442,6 +442,7 @@ Return TIMELINES since we might have changed its head."
 
     (goto-char top)
     (setq prefix (uml--determine-prefix))
+    (message "prefix %s" prefix)
 
     ;; parse timeline headers from old diagram
     (setq timelines (uml--parse-timelines prefix))
