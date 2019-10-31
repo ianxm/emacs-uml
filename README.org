@@ -56,24 +56,13 @@ uml.el can be used to make ascii uml sequence diagrams like this:
   3. run "M-x uml-mode"
   4. move the point onto graph content and hit "C-c C-c" to redraw it
 
-* usage
-
-**** uml-mode provides some key bindings.
-     - C-c C-c :: redraw the diagram at the point
-     - M-f :: move forward to the next word or timeline
-     - M-b :: move backward to the previous word or timeline
-     - M-left :: shift a timeline to the left
-     - M-right :: shift a timeline to the right
-     - M-S-left :: delete the timeline at the point
-     - M-S-right :: insert a timeline to the right
-
 * tutorial
 
 **** timelines
 
     if you move the point over a line with some names and hit C-c C-c
     to redraw it, the list of names will be spread out and centered
-    over timelines.  timeline names cannot contain spaces.
+    over timelines.
 
     put the following content in a buffer, enabled uml-mode, and hit
     C-c C-c while the point is on the line.
@@ -89,8 +78,8 @@ timeline1 timeline2 timeline3
       |           |           |
 #+END_SRC
 
-    you can modify the diagram at any point and run redraw again to
-    clean it up.
+    you can modify the diagram at any point and run redraw again and
+    uml-mode will clean it up.
 
 **** arrow to neighbor
 
@@ -229,7 +218,7 @@ timeline1 timeline2 timeline3
 
 **** comments
 
-     diagrams can be embedded in source code comments
+     diagrams can be embedded in source code comments.
 
 #+BEGIN_SRC
 #
@@ -285,7 +274,33 @@ uml.el needs an empty line above the start of the diagram, so for the
 last example (c-style comments) you have to open a line above the line
 with the timelines before refreshing the diagram.
 
+* reference
+
+**** default keymap
+
+     - C-c C-c :: redraw the diagram at the point
+     - M-f :: move forward to the next word or timeline
+     - M-b :: move backward to the previous word or timeline
+     - M-left :: shift a timeline to the left
+     - M-right :: shift a timeline to the right
+     - M-S-left :: delete the timeline at the point
+     - M-S-right :: insert a timeline to the right
+
+**** syntax rules
+
+   timeline names can contain special characters but cannot contain
+   spaces.
+
+   labels must start with a letter or number but can contain any
+   special characters except pipe (|) or angle brackets (<>).
+
+   comment prefixes can be any length and can contain any special
+   characters, but cannot contain letters or numbers. comment
+   prefixes can contain leading spaces but cannot contain spaces in
+   the middle or at the end.
+
 * todo
+
   - multi-line timeline titles
   - multi-line message labels
   - separators

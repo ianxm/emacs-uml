@@ -197,8 +197,13 @@
   (floor (/ (+ start end) 2)))
 
 (defun uml--determine-prefix ()
-  "Determine the prefix (if there is one)."
-  (if (looking-at "^ ?[^\\w ]+")
+  "Determine the prefix (if there is one).
+The prefix is any characters on the left margin that aren't part
+of the diagram, such comment characters. Prefixes can be any
+length but must be made up of only special characters. Prefixes
+can have leading spaces but cannot contain spaces in the middle
+or at the end."
+  (if (looking-at "^ *[^\w ]+")
       (match-string 0)
     nil))
 
@@ -206,11 +211,11 @@
   "Parse the timeline names.
 Look at the current line after the PREFIX and for each timeline,
 determine the name and center column.  The return structure looks
-like:
-[ (name \"timeline1\" origcenter 5) (name \"timeline2\" origcenter 12) ... ]"
+like: [ (name \"timeline1\" origcenter 5) ... ]
+Names can contain any characters except whitespace or pipes."
   (let (timelines)
     (forward-char (length prefix))
-    (while (looking-at "\s*\\([a-zA-Z0-9\-_]+\\)")
+    (while (looking-at "\s*\\([^\s\n|]+\\)")
       (setq timelines (append timelines (list (list 'name (match-string 1)
                                                     'origcenter (uml--calc-middle (- (match-beginning 1) (line-beginning-position))
                                                                                   (- (match-end 1) (line-beginning-position)))))))
@@ -223,31 +228,33 @@ Parse messages from the diagram given the TIMELINES and PREFIX
 until we reach the BOTTOM.  Messages is a mixed list of plists of
 arrows and separators.  Arrows look like:
     (from 0 to 2 label \"doIt()\" dashed f)
+Labels must start with a number or letter and cannot
+contain spaces, angle brackets or dashes.
 Separators look like:
     (text \"title for next part\")"
-    (let (messages label dashed found)
-      (while (< (line-end-position)
-                (- bottom (length prefix)))
-        (forward-line 1)
-        (forward-char (length prefix))
+  (let (messages label dashed found)
+    (while (< (line-end-position)
+              (- bottom (length prefix)))
+      (forward-line 1)
+      (forward-char (length prefix))
 
-        ;; the label may be above the message or on the same line
-        (when (re-search-forward "[a-zA-Z0-9][a-zA-Z0-9\(\) ]*" (line-end-position) t)
-          (setq label (string-trim-right (match-string 0)))
-          (beginning-of-line))
+      ;; the label may be above the message or on the same line
+      (when (re-search-forward "[a-zA-Z0-9][^\s\n|<>\-]*" (line-end-position) t)
+        (setq label (string-trim-right (match-string 0)))
+        (beginning-of-line))
 
-        ;; FOUND is (from . to) where FROM and TO are timeline indices
-        (setq found (uml--find-message-bounds-maybe timelines))
+      ;; FOUND is (from . to) where FROM and TO are timeline indices
+      (setq found (uml--find-message-bounds-maybe timelines))
 
-        (when found
-          (beginning-of-line)
-          (setq dashed (re-search-forward "\- \-" (line-end-position) t))
-          (setq messages (append messages (list (list 'label  label
-                                                      'from   (car found)
-                                                      'to     (cdr found)
-                                                      'dashed dashed))))
-          (setq label nil)))
-      messages))
+      (when found
+        (beginning-of-line)
+        (setq dashed (re-search-forward "\- \-" (line-end-position) t))
+        (setq messages (append messages (list (list 'label  label
+                                                    'from   (car found)
+                                                    'to     (cdr found)
+                                                    'dashed dashed))))
+        (setq label nil)))
+    messages))
 
 (defun uml--find-message-bounds-maybe (timelines)
   "Find which timelines a message connects.
@@ -442,7 +449,6 @@ Return TIMELINES since we might have changed its head."
 
     (goto-char top)
     (setq prefix (uml--determine-prefix))
-    (message "prefix %s" prefix)
 
     ;; parse timeline headers from old diagram
     (setq timelines (uml--parse-timelines prefix))
