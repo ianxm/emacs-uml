@@ -54,7 +54,7 @@ uml.el can be used to make ascii uml sequence diagrams like this:
   1. install emacs
   2. get [[https://raw.github.com/ianxm/emacs-uml/master/uml.el][uml.el]], add it to your emacs installation
   3. run "M-x uml-mode"
-  4. move the point onto graph content and hit "C-c C-c" to redraw it
+  4. move the point onto the diagram and hit "C-c C-c" to redraw it
 
 * tutorial
 
@@ -270,10 +270,6 @@ becomes
  */
 #+END_SRC
 
-uml.el needs an empty line above the start of the diagram, so for the
-last example (c-style comments) you have to open a line above the line
-with the timelines before refreshing the diagram.
-
 * reference
 
 **** default keymap
@@ -289,7 +285,8 @@ with the timelines before refreshing the diagram.
 **** syntax rules
 
    timeline names can contain special characters but cannot contain
-   spaces.
+   spaces. timeline names can be multiple lines, but be sure to keep
+   the names that are part of the same timeline lined up vertically.
 
    labels must start with a letter or number but can contain any
    special characters except pipe (|) or angle brackets (<>).

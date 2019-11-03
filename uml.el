@@ -29,6 +29,7 @@
 
 ;;; Code:
 
+(require 'seq)
 (require 'subr-x)
 
 (defun uml-forward-timeline ()
@@ -175,19 +176,19 @@
       (if (= (plist-get elt 'to) col2) (plist-put elt 'to col1)))))
 
 (defun uml--find-top-or-bottom (direction)
-  "Return the position at the top or bottom of the diagram depending on DIRECTION ('top or 'bottom)."
-  (let ((end-of-buffer (if (eq direction 'top) (point-min) (point-max)))
-        (step (if (eq direction 'top) -1 1)))
+  "Return the position at the top or bottom of the diagram depending on DIRECTION (:top or :bottom)."
+  (let ((end-of-buffer (if (eq direction :top) (point-min) (point-max)))
+        (step (if (eq direction :top) -1 1)))
     (while (and
             (not (= (point) end-of-buffer))
-            (not (re-search-forward "^[\s+/;#\*]*$" (line-end-position) t)))
+            (not (looking-at "^[^[:word:]|]*$")))
       (forward-line step))
     (cond
-     ((eq direction 'top)
-      (if (re-search-forward "^[\s+/;#\*]*$" (line-end-position) t)
+     ((eq direction :top)
+      (if (looking-at "^[^[:word:]|]*$")
           (forward-line))
       (point))
-     ((eq direction 'bottom)
+     ((eq direction :bottom)
       (if (not (= (point) (point-max)))
           (forward-line -1))
       (line-end-position)))))
@@ -198,38 +199,65 @@
 
 (defun uml--determine-prefix ()
   "Determine the prefix (if there is one).
-The prefix is any characters on the left margin that aren't part
-of the diagram, such comment characters. Prefixes can be any
-length but must be made up of only special characters. Prefixes
-can have leading spaces but cannot contain spaces in the middle
-or at the end."
-  (if (looking-at "^ *[^\w ]+")
+
+The prefix is made up of any characters on the left margin that
+aren't part of the diagram, such as comment characters.  Prefixes
+can be any length but must be made up of only special
+characters.  Prefixes can have leading spaces but cannot contain
+spaces in the middle or at the end."
+  (if (looking-at "[[:blank:]]*[^[:word:][:blank:]]+")
       (match-string 0)
     nil))
 
 (defun uml--parse-timelines (prefix)
   "Parse the timeline names.
+
 Look at the current line after the PREFIX and for each timeline,
 determine the name and center column.  The return structure looks
 like: [ (name \"timeline1\" origcenter 5) ... ]
+
 Names can contain any characters except whitespace or pipes."
   (let (timelines)
-    (forward-char (length prefix))
-    (while (looking-at "\s*\\([^\s\n|]+\\)")
-      (setq timelines (append timelines (list (list 'name (match-string 1)
-                                                    'origcenter (uml--calc-middle (- (match-beginning 1) (line-beginning-position))
-                                                                                  (- (match-end 1) (line-beginning-position)))))))
-      (goto-char (match-end 1)))
-    timelines))
+    (while (looking-at (concat prefix "[^|]+$"))
+      (forward-char (length prefix))
+      ;; "[:blank:]" allows whitespace leading to the name, but doesn't
+      ;; let the while loop go to the next line.
+      ;; "[:space:]" prevents timeline names from containing endlines.
+      (while (looking-at "[[:blank:]]*\\([^[:space:]|]+\\)")
+        (let* ((name (match-string 1))
+               (center (uml--calc-middle (- (match-beginning 1) (line-beginning-position))
+                                         (- (match-end 1) (line-beginning-position))))
+               (index (uml--find-nearest-timeline timelines center))
+               (halflen (and index (/ (uml--max-length-multipart-name (plist-get (nth index timelines) 'name) 2) 2))))
+          ;; if this is the first timeline or center is outside of the
+          ;; nearest existing timeline, then this is a new timeline
+          ;; and we should create a new timeline, else append to an
+          ;; existing one
+          (if (or (not timelines)
+                  (or (> center (+ (plist-get (nth index timelines) 'origcenter) halflen))
+                      (< center (- (plist-get (nth index timelines) 'origcenter) halflen))))
+              (setq timelines (append timelines (list (list 'name (list name)
+                                                                   'origcenter center))))
+            (nconc (plist-get (nth index timelines) 'name) (list name))))
+        (goto-char (match-end 1)))
+      (forward-line 1))
+    (forward-line -1) ; back up so message parsing can pick up from the last header line
+    (sort timelines (lambda (a b) (< (plist-get a 'origcenter)
+                                     (plist-get b 'origcenter))))))
 
 (defun uml--parse-messages (timelines prefix bottom)
   "Parse the messages from the diagram.
+
 Parse messages from the diagram given the TIMELINES and PREFIX
 until we reach the BOTTOM.  Messages is a mixed list of plists of
-arrows and separators.  Arrows look like:
+arrows and separators.
+
+Arrows look like:
     (from 0 to 2 label \"doIt()\" dashed f)
-Labels must start with a number or letter and cannot
-contain spaces, angle brackets or dashes.
+
+Labels must start with a number or letter and cannot contain
+spaces, angle brackets or dashes.
+
 Separators look like:
     (text \"title for next part\")"
   (let (messages label dashed found)
@@ -239,7 +267,7 @@ Separators look like:
       (forward-char (length prefix))
 
       ;; the label may be above the message or on the same line
-      (when (re-search-forward "[a-zA-Z0-9][^\s\n|<>\-]*" (line-end-position) t)
+      (when (re-search-forward "[[:word:]][^\n|<>\-]*" (line-end-position) t)
         (setq label (string-trim-right (match-string 0)))
         (beginning-of-line))
 
@@ -258,6 +286,7 @@ Separators look like:
 
 (defun uml--find-message-bounds-maybe (timelines)
   "Find which timelines a message connects.
+
 Return the indices in TIMELINES between which the message passes
 as (from . to), else nil if there is no message on the current
 line"
@@ -295,7 +324,8 @@ line"
 
 (defun uml--apply-adjustments (adjust timelines messages)
   "Apply ADJUST to TIMELINES and MESSAGES.
-Return TIMELINES since we might have changed its head."
+
+Return (TIMELINES . MESSAGES) since we mucked with both of them."
   (cond
    ((eq :swapleft (plist-get adjust 'name))
     (let (current swapwith)
@@ -317,8 +347,8 @@ Return TIMELINES since we might have changed its head."
 
    ((eq :delete (plist-get adjust 'name))
     (let (current col)
-      (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
-      (setq col current)
+      (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col))
+            col current)
       (plist-put adjust 'movetocol (max 0 (1- col)))
       (when (>= col 0)
         (setq timelines (delete (nth col timelines) timelines))
@@ -335,7 +365,7 @@ Return TIMELINES since we might have changed its head."
       (setq current (uml--find-nearest-timeline timelines (plist-get adjust 'col)))
       (plist-put adjust 'movetocol current)
       (setq current (1+ current))
-      (setq new (list (list 'name "new"
+      (setq new (list (list 'name (list "new")
                             'origcenter nil)))
       (setq rest (nthcdr current timelines))
       (setcdr (nthcdr (- current 1) timelines) new)
@@ -345,23 +375,29 @@ Return TIMELINES since we might have changed its head."
               (to   (plist-get elt 'to)))
           (if (>= from current) (plist-put elt 'from (1+ from)))
           (if (>= to current) (plist-put elt 'to (1+ to))))))))
-  timelines)
+  (cons timelines messages))
+
+(defun uml--max-length-multipart-name (name min)
+  "Convenience function to compute the longest string.
+
+Return the longest string in NAME, which is a list of strings, or
+MIN if it is longer."
+  (seq-reduce (lambda (namelength namepart) (max namelength (length namepart)))
+              name
+              min))
 
 (defun uml--space-out-timelines (timelines messages prefix)
   "Space out TIMELINES to fit MESSAGES' labels and PREFIX."
     (dotimes (ii (length timelines))
       (plist-put (nth ii timelines) 'center (+ (* 12 ii) 6 (length prefix))))
-    (let (elt needed)
+    (let (elt needed namelen)
       (dotimes (ii (length timelines))
         (setq elt (nth ii timelines))
-        (setq needed (max 0 (floor (/ (- (length (plist-get elt 'name)) 8) 2))))
+        (setq namelen (uml--max-length-multipart-name (plist-get elt 'name) 8))
+        (setq needed (floor (/ (- namelen 8) 2)))
         (when (> needed 0)
-            (uml--shift-to-the-right timelines
-                                ii
-                                needed)
-            (uml--shift-to-the-right timelines
-                                (1+ ii)
-                                needed))))
+            (uml--shift-to-the-right timelines ii      needed)
+            (uml--shift-to-the-right timelines (1+ ii) needed))))
 
     (dolist (elt messages)
       (let* ((to    (plist-get elt 'to))
@@ -379,58 +415,76 @@ Return TIMELINES since we might have changed its head."
                                   right
                                   (+ (length (plist-get elt 'label)) 4))))))
 
-(defun uml--write-diagram (timelines messages prefix)
-  "Write the TIMELINES and MESSAGES using PREFIX to the buffer."
+(defun uml--count-timeline-name-rows (timelines)
+  "Count the rows of the TIMELINES' names."
+  (seq-reduce (lambda (val elt) (max val (length (plist-get elt 'name))))
+                              timelines 0))
 
-    ;; write prefix and timeline names
-    (if prefix
-        (insert prefix))
-    (dolist (elt timelines)
-      (uml--write-text-centered-on (plist-get elt 'name)
-                              (plist-get elt 'center)))
+(defun uml--write-diagram (timelines messages prefix)
+  "Write the TIMELINES and MESSAGES using PREFIX to the buffer.
+
+This is done in two steps:
+1. write timeline names
+2. write messages"
+
+  ;; 1. write timeline names
+  (let (numrows)
+    ;; determine the number of rows needed for the timeline names
+    (setq numrows (uml--count-timeline-name-rows timelines))
+    ;; then write them out to the buffer
+    (dotimes (ii numrows)
+      (if prefix
+          (insert prefix))
+      (dolist (elt timelines)
+        (let* ((parts (plist-get elt 'name))
+               (index (+ (- (length parts) numrows) ii))
+               (part (and (>= index 0) (nth index parts))))
+          (if part
+              (uml--write-text-centered-on part
+                                           (plist-get elt 'center)))))
+      (newline)))
+
+  ;; 2. write messages
+  (dolist (elt messages)
+    (uml--write-vertical-space timelines prefix)
     (newline)
 
-    ;; write messages
-    (dolist (elt messages)
-      (uml--write-vertical-space timelines prefix)
-      (newline)
+    (let* ((text       (plist-get elt 'label))
+           (from       (plist-get elt 'from))
+           (to         (plist-get elt 'to))
+           (fromcenter (plist-get (nth from timelines) 'center))
+           (tocenter   (plist-get (nth to timelines) 'center))
+           center
+           selfmessage)
+      (setq selfmessage (= (plist-get elt 'from) (plist-get elt 'to)))
 
-      (let* ((text       (plist-get elt 'label))
-             (from       (plist-get elt 'from))
-             (to         (plist-get elt 'to))
-             (fromcenter (plist-get (nth from timelines) 'center))
-             (tocenter   (plist-get (nth to timelines) 'center))
-             center
-             selfmessage)
-        (setq selfmessage (= (plist-get elt 'from) (plist-get elt 'to)))
+      ;; write label
+      (when (and text (not selfmessage))
+        (uml--write-vertical-space timelines prefix)
+        (newline)
+        (forward-line -1)
+        (setq center (floor (/ (+ fromcenter tocenter) 2)))
+        (uml--write-text-centered-on text center)
+        (delete-char (length text))
+        (forward-line))
 
-        ;; write label
-        (when (and text (not selfmessage))
-          (uml--write-vertical-space timelines prefix)
-          (newline)
-          (forward-line -1)
-          (setq center (floor (/ (+ fromcenter tocenter) 2)))
-          (uml--write-text-centered-on text center)
-          (delete-char (length text))
-          (forward-line))
+      ;; write arrow
+      (if selfmessage
+          (progn
+            (uml--write-vertical-space timelines prefix)
+            (newline)
+            (uml--write-vertical-space timelines prefix)
+            (newline)
+            (forward-line -2)
+            (uml--write-self-arrow fromcenter text)
+            (forward-line))
+        (uml--write-vertical-space timelines prefix)
+        (newline)
+        (forward-line -1)
+        (uml--write-arrow fromcenter tocenter (plist-get elt 'dashed))
+        (forward-line))))
 
-        ;; write arrow
-        (if selfmessage
-            (progn
-              (uml--write-vertical-space timelines prefix)
-              (newline)
-              (uml--write-vertical-space timelines prefix)
-              (newline)
-              (forward-line -2)
-              (uml--write-self-arrow fromcenter text)
-              (forward-line))
-          (uml--write-vertical-space timelines prefix)
-          (newline)
-          (forward-line -1)
-          (uml--write-arrow fromcenter tocenter (plist-get elt 'dashed))
-          (forward-line))))
-
-    (uml--write-vertical-space timelines prefix))
+  (uml--write-vertical-space timelines prefix))
 
 (defun uml--redraw-sequence-diagram (adjust)
   "Redraws a sequence diagram after applying ADJUST.  This is the main routine."
@@ -443,14 +497,14 @@ Return TIMELINES since we might have changed its head."
     (beginning-of-line)
 
     ;; find the top and bottom of the diagram
-    (setq top (uml--find-top-or-bottom 'top))
-    (setq bottom (uml--find-top-or-bottom 'bottom))
+    (setq top (uml--find-top-or-bottom :top))
+    (setq bottom (uml--find-top-or-bottom :bottom))
     ;; (message "top: %d bottom: %d" top bottom)
 
     (goto-char top)
     (setq prefix (uml--determine-prefix))
 
-    ;; parse timeline headers from old diagram
+    ;; parse timeline names from old diagram
     (setq timelines (uml--parse-timelines prefix))
 
     ;; parse messages from old diagram
@@ -461,7 +515,10 @@ Return TIMELINES since we might have changed its head."
     (delete-char (- bottom top))
 
     ;; apply adjustments such as shifts or swaps
-    (setq timelines (uml--apply-adjustments adjust timelines messages))
+    (let (ret)
+      (setq ret (uml--apply-adjustments adjust timelines messages))
+      (setq timelines (car ret)
+            messages (cdr ret)))
 
     ;; calculate timeline center columns
     (uml--space-out-timelines timelines messages prefix)
@@ -472,7 +529,8 @@ Return TIMELINES since we might have changed its head."
     ;; move the cursor back to the column where it was before we did anything
     (goto-char top)
     (when (plist-get adjust 'movetocol)
-        (move-to-column (plist-get (nth (plist-get adjust 'movetocol) timelines) 'center)))))
+      (forward-line (1- (uml--count-timeline-name-rows timelines)))
+      (move-to-column (plist-get (nth (plist-get adjust 'movetocol) timelines) 'center)))))
 
 ;;;###autoload
 (define-minor-mode uml-mode
