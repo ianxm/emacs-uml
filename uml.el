@@ -250,14 +250,14 @@ Names can contain any characters except whitespace or pipes."
   (let (timelines eob)
     (while (looking-at (concat prefix "[^|]+$"))
       (forward-char (length prefix))
-      (message "parsing looking at %d %s" (point) (buffer-substring (point) (line-end-position)))
       ;; "[:blank:]" allows whitespace leading to the name, but doesn't
       ;; let the while loop go to the next line.
       ;; "[:space:]" prevents timeline names from containing endlines.
       (while (looking-at "[[:blank:]]*\\([^[:space:]|]+\\)")
         (let* ((name (match-string 1))
-               (center (uml--calc-middle (- (match-beginning 1) (line-beginning-position))
-                                         (- (match-end 1) (line-beginning-position))))
+               (beg (- (match-beginning 1) (line-beginning-position)))
+               (end (- (match-end 1) (line-beginning-position)))
+               (center (uml--calc-middle beg end))
                (index (uml--find-nearest-timeline timelines center))
                (halflen (and index (/ (uml--max-length-multipart-name (plist-get (nth index timelines) 'name) 2) 2))))
           ;; if this is the first timeline or center is outside of the
@@ -265,8 +265,8 @@ Names can contain any characters except whitespace or pipes."
           ;; and we should create a new timeline, else append to an
           ;; existing one
           (if (or (not timelines)
-                  (or (> center (+ (plist-get (nth index timelines) 'origcenter) halflen))
-                      (< center (- (plist-get (nth index timelines) 'origcenter) halflen))))
+                  (or (> beg (+ (plist-get (nth index timelines) 'origcenter) halflen))
+                      (< end (- (plist-get (nth index timelines) 'origcenter) halflen))))
               (setq timelines (append timelines (list (list 'name (list name)
                                                                    'origcenter center))))
             (nconc (plist-get (nth index timelines) 'name) (list name))))
