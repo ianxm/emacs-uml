@@ -4,7 +4,7 @@
 
 ;; Author: Ian Martins <ianxm@jhu.edu>
 ;; URL: http://github.com/ianxm/emacs-uml
-;; Version: 0.0.2
+;; Version: 0.0.3
 ;; Keywords: docs
 ;; Package-Requires: ((emacs "24.4"))
 
