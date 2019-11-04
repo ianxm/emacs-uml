@@ -298,8 +298,6 @@ becomes
 
 * todo
 
-  - multi-line timeline titles
-  - multi-line message labels
   - separators
   - swap arrow up or down
   - move cursor up or down by an arrow

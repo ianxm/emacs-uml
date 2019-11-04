@@ -131,17 +131,47 @@
         (insert ?>))
     (delete-char (- delta 1))))
 
-(defun uml--write-self-arrow (col text)
-  "Write an arrow from and to the COL timeline, labeled with TEXT."
-  (move-to-column (1+ col))
-  (insert " --.")
-  (delete-char (min 4 (- (line-end-position) (point))))
-  (forward-line)
-  (move-to-column (1+ col))
-  (if (not text)
-      (setq text ""))
-  (insert (format "<--' %s" text))
-  (delete-char (min (+ 5 (length text)) (- (line-end-position) (point)))))
+(defun uml--write-label-and-arrow (timelines prefix fromcol tocol text dashed)
+  "Write TIMELINES with PREFIX then label and arrow for a message from column FROMCOL to column TOCOL with label TEXT which may be DASHED."
+  ;; write label
+  (if text
+      (let (center)
+        (dotimes (ii (length text))
+          (uml--write-vertical-space timelines prefix)
+          (newline)
+          (forward-line -1)
+          (setq center (floor (/ (+ fromcol tocol) 2)))
+          (uml--write-text-centered-on (nth ii text) center)
+          (delete-char (length (nth ii text)))
+          (forward-line))))
+
+  ;; write arrow
+  (uml--write-vertical-space timelines prefix)
+  (newline)
+  (forward-line -1)
+  (uml--write-arrow fromcol tocol dashed)
+  (forward-line))
+
+(defun uml--write-self-arrow (timelines prefix col text)
+  "Write TIMELINES with PREFIX and an arrow from and to column COL, labeled with TEXT."
+  (let ((numrows (max 2 (length text)))
+        arrow part-index text-part)
+    (dotimes (ii numrows)
+      (setq arrow (cond
+                   ((= (- numrows ii) 2)  " --.")
+                   ((= (- numrows ii) 1)  "<--'")
+                   (t "    ")))
+      (if (not text)
+          (setq text-part "")
+        (setq part-index (+ (- ii numrows) (length text)))
+        (setq text-part (if (< part-index 0) "" (nth part-index text))))
+      (uml--write-vertical-space timelines prefix)
+      (newline)
+      (forward-line -1)
+      (move-to-column (1+ col))
+      (insert (format "%s %s" arrow text-part))
+      (delete-char (min (+ 5 (length text-part)) (- (line-end-position) (point))))
+      (forward-line))))
 
 (defun uml--fit-label-between (timelines left right width)
   "Spread out TIMELINES so that LEFT and RIGHT have WIDTH space between them."
@@ -205,8 +235,8 @@ aren't part of the diagram, such as comment characters.  Prefixes
 can be any length but must be made up of only special
 characters.  Prefixes can have leading spaces but cannot contain
 spaces in the middle or at the end."
-  (if (looking-at "[[:blank:]]*[^[:word:][:blank:]]+")
-      (match-string 0)
+  (if (looking-at "\\([[:blank:]]*[^[:word:][:blank:]]+\\) ")
+      (match-string 1)
     nil))
 
 (defun uml--parse-timelines (prefix)
@@ -217,9 +247,10 @@ determine the name and center column.  The return structure looks
 like: [ (name \"timeline1\" origcenter 5) ... ]
 
 Names can contain any characters except whitespace or pipes."
-  (let (timelines)
+  (let (timelines eob)
     (while (looking-at (concat prefix "[^|]+$"))
       (forward-char (length prefix))
+      (message "parsing looking at %d %s" (point) (buffer-substring (point) (line-end-position)))
       ;; "[:blank:]" allows whitespace leading to the name, but doesn't
       ;; let the while loop go to the next line.
       ;; "[:space:]" prevents timeline names from containing endlines.
@@ -240,8 +271,10 @@ Names can contain any characters except whitespace or pipes."
                                                                    'origcenter center))))
             (nconc (plist-get (nth index timelines) 'name) (list name))))
         (goto-char (match-end 1)))
-      (forward-line 1))
-    (forward-line -1) ; back up so message parsing can pick up from the last header line
+      (setq eob (= 1 (forward-line 1))))
+    (if (not eob)            ; if we didn't hit the end of the buffer,
+        (forward-line -1))   ; back up so message parsing can pick up from the last header line
+
     (sort timelines (lambda (a b) (< (plist-get a 'origcenter)
                                      (plist-get b 'origcenter))))))
 
@@ -253,7 +286,7 @@ until we reach the BOTTOM.  Messages is a mixed list of plists of
 arrows and separators.
 
 Arrows look like:
-    (from 0 to 2 label \"doIt()\" dashed f)
+    (from 0 to 2 label (\"doIt()\") dashed nil)
 
 Labels must start with a number or letter and cannot contain
 spaces, angle brackets or dashes.
@@ -261,14 +294,16 @@ spaces, angle brackets or dashes.
 Separators look like:
     (text \"title for next part\")"
   (let (messages label dashed found)
-    (while (< (line-end-position)
-              (- bottom (length prefix)))
+    (while (and (< (line-end-position) (- bottom (length prefix)))
+                (< (line-end-position) (buffer-end 1)))
       (forward-line 1)
       (forward-char (length prefix))
 
       ;; the label may be above the message or on the same line
       (when (re-search-forward "[[:word:]][^\n|<>\-]*" (line-end-position) t)
-        (setq label (string-trim-right (match-string 0)))
+        (if (not label)
+            (setq label (list (string-trim-right (match-string 0)))) ; single part
+          (nconc label (list (string-trim-right (match-string 0))))) ; multi part
         (beginning-of-line))
 
       ;; FOUND is (from . to) where FROM and TO are timeline indices
@@ -377,13 +412,13 @@ Return (TIMELINES . MESSAGES) since we mucked with both of them."
           (if (>= to current) (plist-put elt 'to (1+ to))))))))
   (cons timelines messages))
 
-(defun uml--max-length-multipart-name (name min)
+(defun uml--max-length-multipart-name (multipart-name min)
   "Convenience function to compute the longest string.
 
-Return the longest string in NAME, which is a list of strings, or
-MIN if it is longer."
+Return the longest string in MULTIPART-NAME, which is a list of
+strings, or MIN if it is longer."
   (seq-reduce (lambda (namelength namepart) (max namelength (length namepart)))
-              name
+              multipart-name
               min))
 
 (defun uml--space-out-timelines (timelines messages prefix)
@@ -409,11 +444,11 @@ MIN if it is longer."
                 (uml--fit-label-between timelines ; self arrow
                                         left
                                         (1+ left)
-                                        (+ (length (plist-get elt 'label)) 8)))
+                                        (+ (uml--max-length-multipart-name (plist-get elt 'label) 0) 8)))
           (uml--fit-label-between timelines
                                   left
                                   right
-                                  (+ (length (plist-get elt 'label)) 4))))))
+                                  (+ (uml--max-length-multipart-name (plist-get elt 'label) 0) 4))))))
 
 (defun uml--count-timeline-name-rows (timelines)
   "Count the rows of the TIMELINES' names."
@@ -454,35 +489,13 @@ This is done in two steps:
            (to         (plist-get elt 'to))
            (fromcenter (plist-get (nth from timelines) 'center))
            (tocenter   (plist-get (nth to timelines) 'center))
-           center
+           (dashed     (plist-get elt 'dashed))
            selfmessage)
       (setq selfmessage (= (plist-get elt 'from) (plist-get elt 'to)))
 
-      ;; write label
-      (when (and text (not selfmessage))
-        (uml--write-vertical-space timelines prefix)
-        (newline)
-        (forward-line -1)
-        (setq center (floor (/ (+ fromcenter tocenter) 2)))
-        (uml--write-text-centered-on text center)
-        (delete-char (length text))
-        (forward-line))
-
-      ;; write arrow
       (if selfmessage
-          (progn
-            (uml--write-vertical-space timelines prefix)
-            (newline)
-            (uml--write-vertical-space timelines prefix)
-            (newline)
-            (forward-line -2)
-            (uml--write-self-arrow fromcenter text)
-            (forward-line))
-        (uml--write-vertical-space timelines prefix)
-        (newline)
-        (forward-line -1)
-        (uml--write-arrow fromcenter tocenter (plist-get elt 'dashed))
-        (forward-line))))
+          (uml--write-self-arrow timelines prefix fromcenter text)
+        (uml--write-label-and-arrow timelines prefix fromcenter tocenter text dashed))))
 
   (uml--write-vertical-space timelines prefix))
 
