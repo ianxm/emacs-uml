@@ -239,16 +239,20 @@ spaces in the middle or at the end."
       (match-string 1)
     nil))
 
-(defun uml--parse-timelines (prefix)
+(defun uml--parse-timelines (prefix bottom)
   "Parse the timeline names.
 
-Look at the current line after the PREFIX and for each timeline,
-determine the name and center column.  The return structure looks
-like: [ (name \"timeline1\" origcenter 5) ... ]
+Parse timeline names after the PREFIX of each line until we hit
+BOTTOM or see a pipe indicating we're past the timeline names and
+into the messages. For each timeline, determine the name and
+center column.  The return structure looks like:
+
+    [ (name \"timeline1\" origcenter 5) ... ]
 
 Names can contain any characters except whitespace or pipes."
   (let (timelines eob)
-    (while (looking-at (concat prefix "[^|]+$"))
+    (while (and (looking-at (concat prefix "[^|]+$"))
+                (< (point) bottom))
       (forward-char (length prefix))
       ;; "[:blank:]" allows whitespace leading to the name, but doesn't
       ;; let the while loop go to the next line.
@@ -518,10 +522,12 @@ This is done in two steps:
     (setq prefix (uml--determine-prefix))
 
     ;; parse timeline names from old diagram
-    (setq timelines (uml--parse-timelines prefix))
+    (setq timelines (uml--parse-timelines prefix bottom))
+    ;; (message "timelines %s" timelines)
 
     ;; parse messages from old diagram
     (setq messages (uml--parse-messages timelines prefix bottom))
+    ;; (message "messages %s" messages)
 
     ;; clear the old diagram content from the buffer
     (goto-char top)
