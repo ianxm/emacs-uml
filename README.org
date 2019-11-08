@@ -289,7 +289,8 @@ becomes
    the names that are part of the same timeline lined up vertically.
 
    labels must start with a letter or number but can contain any
-   special characters except pipe (|) or angle brackets (<>).
+   special characters except pipe (|), dash (-), or angle brackets
+   (<>).
 
    comment prefixes can be any length and can contain any special
    characters, but cannot contain letters or numbers. comment
