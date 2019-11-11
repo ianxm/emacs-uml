@@ -6,7 +6,7 @@
 ;; URL: http://github.com/ianxm/emacs-uml
 ;; Version: 0.0.3
 ;; Keywords: docs
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "24.4") (seq "2.20"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -577,6 +577,6 @@ See the command \\[uml-seqence-diagram]."
    (,(kbd "M-b") . uml-back-timeline))
  :group 'uml)
 
-(provide 'uml)
+(provide 'uml-mode)
 
 ;;; uml-mode.el ends here
