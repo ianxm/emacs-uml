@@ -4,16 +4,16 @@
   coding, but it can also do anything else.  uml is a modeling
   language for creating diagrams of software design.
 
-  uml.el is a minor mode for emacs that makes it easier to build ascii
-  sequence diagrams in emacs.  my goal is for it to do for sequence
-  diagrams what orgtbl-mode does for tables.
+  uml-mode.el is a minor mode for emacs that makes it easier to build
+  ascii sequence diagrams in emacs.  my goal is for it to do for
+  sequence diagrams what orgtbl-mode does for tables.
 
   ascii uml diagrams are quick and easy to make and can be emailed
   without attachment or embedded in code comments.
 
 * example
 
-uml.el can be used to make ascii uml sequence diagrams like this:
+uml-mode.el can be used to make ascii uml sequence diagrams like this:
 
 #+BEGIN_SRC
    person1                    person2     kitchen
@@ -42,17 +42,17 @@ uml.el can be used to make ascii uml sequence diagrams like this:
 
 * features
 
-  uml.el only supports sequence diagrams.
+  uml-mode.el only supports sequence diagrams.
 
-  uml.el provides key bindings for more easily moving around sequence
-  diagrams, and aligning and redrawing them.
+  uml-mode.el provides key bindings for more easily moving around
+  sequence diagrams, and aligning and redrawing them.
 
   diagrams can be embedded in source code comments.
 
 * setup
 
   1. install emacs
-  2. get [[https://raw.github.com/ianxm/emacs-uml/master/uml.el][uml.el]], add it to your emacs installation
+  2. get [[https://raw.github.com/ianxm/emacs-uml/master/uml.el][uml-mode.el]], add it to your emacs installation
   3. run "M-x uml-mode"
   4. move the point onto the diagram and hit "C-c C-c" to redraw it
 

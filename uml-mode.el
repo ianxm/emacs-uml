@@ -1,4 +1,4 @@
-;;; uml.el --- Minor mode for ascii uml sequence diagrams -*- lexical-binding: t -*-
+;;; uml-mode.el --- Minor mode for ascii uml sequence diagrams -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2015-2019 Ian Martins
 
@@ -244,7 +244,7 @@ spaces in the middle or at the end."
 
 Parse timeline names after the PREFIX of each line until we hit
 BOTTOM or see a pipe indicating we're past the timeline names and
-into the messages. For each timeline, determine the name and
+into the messages.  For each timeline, determine the name and
 center column.  The return structure looks like:
 
     [ (name \"timeline1\" origcenter 5) ... ]
@@ -579,4 +579,4 @@ See the command \\[uml-seqence-diagram]."
 
 (provide 'uml)
 
-;;; uml.el ends here
+;;; uml-mode.el ends here
