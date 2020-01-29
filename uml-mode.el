@@ -1,10 +1,10 @@
 ;;; uml-mode.el --- Minor mode for ascii uml sequence diagrams -*- lexical-binding: t -*-
 
-;; Copyright (C) 2015-2019 Ian Martins
+;; Copyright (C) 2015-2020 Ian Martins
 
 ;; Author: Ian Martins <ianxm@jhu.edu>
 ;; URL: http://github.com/ianxm/emacs-uml
-;; Version: 0.0.3
+;; Version: 0.0.4
 ;; Keywords: docs
 ;; Package-Requires: ((emacs "24.4") seq)
 
@@ -254,10 +254,9 @@ Names can contain any characters except whitespace or pipes."
     (while (and (looking-at (concat prefix "[^|]+$"))
                 (< (point) bottom))
       (forward-char (length prefix))
-      ;; "[:blank:]" allows whitespace leading to the name, but doesn't
-      ;; let the while loop go to the next line.
-      ;; "[:space:]" prevents timeline names from containing endlines.
-      (while (looking-at "[[:blank:]]*\\([^[:space:]|]+\\)")
+      ;; the first "[:blank:]" allows whitespace leading to the name,
+      ;; but doesn't let the while loop go to the next line.
+      (while (looking-at "[[:blank:]]*\\([^[:blank:]|\n]+\\)")
         (let* ((name (match-string 1))
                (beg (- (match-beginning 1) (line-beginning-position)))
                (end (- (match-end 1) (line-beginning-position)))

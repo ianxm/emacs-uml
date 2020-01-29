@@ -1,17 +1,20 @@
-* overview
+[[https://melpa.org/#/uml-mode][file:https://melpa.org/packages/uml-mode-badge.svg]] [[https://www.gnu.org/licenses/gpl-3.0.txt][file:https://img.shields.io/badge/license-GPL_3-green.svg]]
 
-  [[http://www.gnu.org/software/emacs/][emacs]] is a text editor.  an extensible one.  it is mainly used for
-  coding, but it can also do anything else.  uml is a modeling
-  language for creating diagrams of software design.
+* uml-mode
+** overview
 
-  uml-mode.el is a minor mode for emacs that makes it easier to build
-  ascii sequence diagrams in emacs.  my goal is for it to do for
-  sequence diagrams what orgtbl-mode does for tables.
+   [[http://www.gnu.org/software/emacs/][emacs]] is a text editor.  an extensible one.  it is mainly used for
+   coding, but it can also do anything else.  uml is a modeling
+   language for creating diagrams of software design.
 
-  ascii uml diagrams are quick and easy to make and can be emailed
-  without attachment or embedded in code comments.
+   uml-mode.el is a minor mode for emacs that makes it easier to build
+   ascii sequence diagrams in emacs.  my goal is for it to do for
+   sequence diagrams what orgtbl-mode does for tables.
 
-* example
+   ascii uml diagrams are quick and easy to make and can be emailed
+   without attachment or embedded in code comments.
+
+** example
 
 uml-mode.el can be used to make ascii uml sequence diagrams like this:
 
@@ -40,25 +43,25 @@ uml-mode.el can be used to make ascii uml sequence diagrams like this:
       |                          |           |
 #+END_SRC
 
-* features
+** features
 
-  uml-mode.el only supports sequence diagrams.
+   uml-mode.el only supports sequence diagrams.
 
-  uml-mode.el provides key bindings for more easily moving around
-  sequence diagrams, and aligning and redrawing them.
+   uml-mode.el provides key bindings for more easily moving around
+   sequence diagrams, and aligning and redrawing them.
 
-  diagrams can be embedded in source code comments.
+   diagrams can be embedded in source code comments.
 
-* setup
+** setup
 
-  1. install emacs
-  2. get [[https://raw.github.com/ianxm/emacs-uml/master/uml.el][uml-mode.el]], add it to your emacs installation
-  3. run "M-x uml-mode"
-  4. move the point onto the diagram and hit "C-c C-c" to redraw it
+   1. install emacs
+   2. get [[https://raw.github.com/ianxm/emacs-uml/master/uml.el][uml-mode.el]], add it to your emacs installation
+   3. run "M-x uml-mode"
+   4. move the point onto the diagram and hit "C-c C-c" to redraw it
 
-* tutorial
+** tutorial
 
-**** timelines
+***** timelines
 
     if you move the point over a line with some names and hit C-c C-c
     to redraw it, the list of names will be spread out and centered
@@ -81,7 +84,7 @@ timeline1 timeline2 timeline3
     you can modify the diagram at any point and run redraw again and
     uml-mode will clean it up.
 
-**** arrow to neighbor
+***** arrow to neighbor
 
     arrows can be added by putting a single dash next to a timeline
     (pipe character below a timeline name).  this will draw an arrow
@@ -104,7 +107,7 @@ timeline1 timeline2 timeline3
       |           |           |
 #+END_SRC
 
-**** arrow to any timeline
+***** arrow to any timeline
 
     an angle bracket near a timeline indicates the other end of the
     arrow.  both the angle bracket and the dash are used to determine
@@ -124,7 +127,7 @@ timeline1 timeline2 timeline3
       |           |           |
 #+END_SRC
 
-**** arrow to the left
+***** arrow to the left
 
     create arrows that go to the left by reversing the angle bracket and dash.
 
@@ -142,7 +145,7 @@ timeline1 timeline2 timeline3
       |           |           |
 #+END_SRC
 
-**** dashed arrows
+***** dashed arrows
 
     arrows will be dashed if there is a non-consecutive missing dash
     at any point in the line.
@@ -168,7 +171,7 @@ timeline1 timeline2 timeline3
       |           |           |
 #+END_SRC
 
-**** labels
+***** labels
 
     labels can be entered on the line above or the same line as the
     arrow.  there can only be one label per line.
@@ -196,7 +199,7 @@ timeline1 timeline2 timeline3
       |           |           |
 #+END_SRC
 
-**** self arrows
+***** self arrows
 
     self arrows are made by keeping the angle bracket and any dashes
     under the same timeline.
@@ -216,7 +219,7 @@ timeline1 timeline2 timeline3
       |           |           |
 #+END_SRC
 
-**** comments
+***** comments
 
      diagrams can be embedded in source code comments.
 
@@ -270,36 +273,36 @@ becomes
  */
 #+END_SRC
 
-* reference
+** reference
 
-**** default keymap
+***** default keymap
 
-     - C-c C-c :: redraw the diagram at the point
-     - M-f :: move forward to the next word or timeline
-     - M-b :: move backward to the previous word or timeline
-     - M-left :: shift a timeline to the left
-     - M-right :: shift a timeline to the right
-     - M-S-left :: delete the timeline at the point
-     - M-S-right :: insert a timeline to the right
+      - C-c C-c :: redraw the diagram at the point
+      - M-f :: move forward to the next word or timeline
+      - M-b :: move backward to the previous word or timeline
+      - M-left :: shift a timeline to the left
+      - M-right :: shift a timeline to the right
+      - M-S-left :: delete the timeline at the point
+      - M-S-right :: insert a timeline to the right
 
-**** syntax rules
+***** syntax rules
 
-   timeline names can contain special characters but cannot contain
-   spaces. timeline names can be multiple lines, but be sure to keep
-   the names that are part of the same timeline lined up vertically.
+    timeline names can contain special characters but cannot contain
+    spaces. timeline names can be multiple lines, but be sure to keep
+    the names that are part of the same timeline lined up vertically.
 
-   labels must start with a letter or number but can contain any
-   special characters except pipe (|), dash (-), or angle brackets
-   (<>).
+    labels must start with a letter or number but can contain any
+    special characters except pipe (|), dash (-), or angle brackets
+    (<>).
 
-   comment prefixes can be any length and can contain any special
-   characters, but cannot contain letters or numbers. comment
-   prefixes can contain leading spaces but cannot contain spaces in
-   the middle or at the end.
+    comment prefixes can be any length and can contain any special
+    characters, but cannot contain letters or numbers. comment
+    prefixes can contain leading spaces but cannot contain spaces in
+    the middle or at the end.
 
-* todo
+** todo
 
-  - separators
-  - swap arrow up or down
-  - move cursor up or down by an arrow
-  - class diagrams
+   - separators
+   - swap arrow up or down
+   - move cursor up or down by an arrow
+   - class diagrams
