@@ -45,30 +45,41 @@ uml-mode.el can be used to make ascii uml sequence diagrams like this:
 
 ** features
 
-   uml-mode.el only supports sequence diagrams.
+   - only supports sequence diagrams
+   - provides key bindings for more easily moving around sequence
+     diagrams, and aligning and redrawing them
+   - diagrams can be embedded in source code comments
 
-   uml-mode.el provides key bindings for more easily moving around
-   sequence diagrams, and aligning and redrawing them.
+** installation
 
-   diagrams can be embedded in source code comments.
+** melpa
 
-** setup
+   1. download [[https://raw.github.com/ianxm/emacs-uml/master/uml-mode.el][uml-mode.el]]
+   2. run @@html:<kbd>@@M-x@@html:</kbd>@@ ~package-install-file~ @@html:<kbd>@@RET@@html:</kbd>@@
+   3. choose ~uml-mode.el~
 
-   1. install emacs
-   2. get [[https://raw.github.com/ianxm/emacs-uml/master/uml.el][uml-mode.el]], add it to your emacs installation
-   3. run "M-x uml-mode"
-   4. move the point onto the diagram and hit "C-c C-c" to redraw it
+** manual install
+
+   1. download [[https://raw.github.com/ianxm/emacs-uml/master/uml-mode.el][uml-mode.el]]
+   2. add it to your ~load-path~
+   3. add a ~(require 'uml-mode)~ to your emacs init
+
+** usage
+
+   1. run @@html:<kbd>@@M-x@@html:</kbd>@@ ~uml-mode~
+   2. move the point onto a diagram and hit @@html:<kbd>@@C-c C-c@@html:</kbd>@@ to redraw it
 
 ** tutorial
 
 ***** timelines
 
-    if you move the point over a line with some names and hit C-c C-c
-    to redraw it, the list of names will be spread out and centered
-    over timelines.
+    if you move the point over a line with some names and hit
+    @@html:<kbd>@@C-c C-c@@html:</kbd>@@ to redraw it, the list of
+    names will be spread out and centered over timelines.
 
     put the following content in a buffer, enabled uml-mode, and hit
-    C-c C-c while the point is on the line.
+    @@html:<kbd>@@C-c C-c@@html:</kbd>@@ while the point is on the
+    line.
 
 #+BEGIN_SRC
 timeline1 timeline2 timeline3
@@ -129,7 +140,8 @@ timeline1 timeline2 timeline3
 
 ***** arrow to the left
 
-    create arrows that go to the left by reversing the angle bracket and dash.
+    create arrows that go to the left by reversing the angle bracket
+    and dash.
 
 #+BEGIN_SRC
    timeline1     timeline2     timeline3
@@ -277,13 +289,15 @@ becomes
 
 ***** default keymap
 
-      - C-c C-c :: redraw the diagram at the point
-      - M-f :: move forward to the next word or timeline
-      - M-b :: move backward to the previous word or timeline
-      - M-left :: shift a timeline to the left
-      - M-right :: shift a timeline to the right
-      - M-S-left :: delete the timeline at the point
-      - M-S-right :: insert a timeline to the right
+| key                                    | action                                         |
+|----------------------------------------+------------------------------------------------|
+| @@html:<kbd>@@C-c C-c@@html:</kbd>@@   | redraw the diagram at the point                |
+| @@html:<kbd>@@M-f@@html:</kbd>@@       | move forward to the next word or timeline      |
+| @@html:<kbd>@@M-b@@html:</kbd>@@       | move backward to the previous word or timeline |
+| @@html:<kbd>@@M-left@@html:</kbd>@@    | shift a timeline to the left                   |
+| @@html:<kbd>@@M-right@@html:</kbd>@@   | shift a timeline to the right                  |
+| @@html:<kbd>@@M-S-left@@html:</kbd>@@  | delete the timeline at the point               |
+| @@html:<kbd>@@M-S-right@@html:</kbd>@@ | insert a timeline to the right                 |
 
 ***** syntax rules
 
