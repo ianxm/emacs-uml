@@ -54,15 +54,13 @@ uml-mode.el can be used to make ascii uml sequence diagrams like this:
 
 ** melpa
 
-   1. download [[https://raw.github.com/ianxm/emacs-uml/master/uml-mode.el][uml-mode.el]]
-   2. run @@html:<kbd>@@M-x@@html:</kbd>@@ ~package-install-file~ @@html:<kbd>@@RET@@html:</kbd>@@
-   3. choose ~uml-mode.el~
+   1. run @@html:<kbd>@@M-x@@html:</kbd>@@ ~package-install~ @@html:<kbd>@@RET@@html:</kbd>@@ ~uml-mode~
 
 ** manual install
 
    1. download [[https://raw.github.com/ianxm/emacs-uml/master/uml-mode.el][uml-mode.el]]
-   2. add it to your ~load-path~
-   3. add a ~(require 'uml-mode)~ to your emacs init
+   2. run @@html:<kbd>@@M-x@@html:</kbd>@@ ~package-install-file~ @@html:<kbd>@@RET@@html:</kbd>@@
+   3. choose ~uml-mode.el~
 
 ** usage
 
