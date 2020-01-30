@@ -62,11 +62,6 @@ uml-mode.el can be used to make ascii uml sequence diagrams like this:
    2. run @@html:<kbd>@@M-x@@html:</kbd>@@ ~package-install-file~ @@html:<kbd>@@RET@@html:</kbd>@@
    3. choose ~uml-mode.el~
 
-** usage
-
-   1. run @@html:<kbd>@@M-x@@html:</kbd>@@ ~uml-mode~
-   2. move the point onto a diagram and hit @@html:<kbd>@@C-c C-c@@html:</kbd>@@ to redraw it
-
 ** tutorial
 
 ***** timelines
@@ -75,7 +70,8 @@ uml-mode.el can be used to make ascii uml sequence diagrams like this:
     @@html:<kbd>@@C-c C-c@@html:</kbd>@@ to redraw it, the list of
     names will be spread out and centered over timelines.
 
-    put the following content in a buffer, enabled uml-mode, and hit
+    put the following content in a buffer, enabled uml-mode
+    (@@html:<kbd>@@M-x@@html:</kbd>@@ ~uml-mode~), and hit
     @@html:<kbd>@@C-c C-c@@html:</kbd>@@ while the point is on the
     line.
 
